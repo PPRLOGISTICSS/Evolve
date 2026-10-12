@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f4f5fa">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://script.google.com https://*.googleusercontent.com; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
 <title>PPR Order</title>
 <style>
 :root{
@@ -33,6 +33,12 @@ button,input{font:inherit;color:inherit}
 .state.saved{background:var(--mint-tint);color:var(--mint)}
 .state.saving{background:var(--peri-tint);color:var(--peri)}
 .state.err{background:var(--blush-tint);color:var(--blush);cursor:pointer}
+.tools{display:flex;gap:8px}
+.icon{width:38px;height:38px;border-radius:50%;border:0;background:var(--card);color:var(--peri);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;box-shadow:0 1px 2px rgba(29,29,31,.06)}
+.icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 h1{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
   font-size:34px;line-height:1.08;font-weight:700;letter-spacing:.3px;margin:10px 0 4px}
 .sub{color:var(--ink2);font-size:15px;margin:0 0 16px}
@@ -83,6 +89,55 @@ input:focus{outline:none}
 .cta:active{opacity:.88}
 .cta:disabled{opacity:.6}
 .ghost{display:block;margin:12px auto 0;border:0;background:transparent;color:var(--peri);font-size:15px;font-weight:500;cursor:pointer;padding:8px 12px}
+
+.msg{background:var(--card);border-radius:var(--r);padding:30px 22px;text-align:center}
+.msg svg{width:44px;height:44px;margin-bottom:8px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.msg h2{font-size:19px;margin:0 0 6px}
+.msg p{margin:0;color:var(--ink2);font-size:15px}
+.msg.ok svg{stroke:var(--mint)}
+.msg.bad svg{stroke:var(--apricot)}
+.skel{height:92px;border-radius:var(--r);background:var(--card);margin-bottom:10px;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.8}50%{opacity:.45}}
+
+/* packaging and designs */
+.group.pk,.group.dz{margin-top:16px}
+.group.dz{margin-top:22px}
+.pk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;position:relative}
+.pk-head .nm{font-weight:600}
+.pk-head small{display:block;font-size:13px;color:var(--ink3)}
+.group .empty{position:relative}
+.pk-head + .item::before,.pk-head + .opt::before,.pk-head + .empty::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.sw{flex:none;position:relative;width:51px;height:31px;border-radius:999px;border:0;padding:0;background:#e3e4ea;cursor:pointer;transition:background .2s}
+.sw span{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:transform .2s}
+.sw.on{background:var(--mint)}
+.sw.on span{transform:translateX(20px)}
+button.pill{border:0;cursor:pointer;font-family:inherit}
+.opt.fl .ot{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fnm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fth{flex:none;width:44px;height:44px;border-radius:9px;object-fit:cover;background:var(--field)}
+.fth.ext{display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.3px;color:var(--peri);background:var(--peri-tint)}
+.fth.ext.big{width:96px;height:96px;border-radius:20px;font-size:20px}
+.opt.fl.up{opacity:.6;cursor:default}
+.pv{display:flex;align-items:center;justify-content:center;min-height:160px;background:var(--card);border-radius:var(--r);padding:12px;margin:4px 0 0}
+.pv img{display:block;max-width:100%;max-height:55vh;border-radius:10px}
+.pv-wait{color:var(--ink3);font-size:15px}
+.cta.lnk{display:flex;align-items:center;justify-content:center;text-decoration:none}
+.cta.lnk.off{opacity:.5;pointer-events:none}
+
+/* sign in, centred and plain */
+body.out .top,body.out h1,body.out .sub{display:none}
+body.out .page{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:center}
+.si{width:100%;max-width:340px;margin:0 auto 8vh;text-align:center}
+.si-ic{width:64px;height:64px;border-radius:18px;background:var(--peri);color:#fff;display:inline-flex;align-items:center;justify-content:center;
+  margin-bottom:14px;box-shadow:0 6px 18px rgba(93,108,240,.28)}
+.si-ic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.si h2{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;font-size:28px;font-weight:700;letter-spacing:.2px;margin:0 0 22px}
+.si-pw{display:block;width:100%;height:54px;border:0;border-radius:14px;background:var(--card);box-shadow:0 1px 2px rgba(29,29,31,.06);
+  text-align:center;font-size:22px;letter-spacing:4px;padding:0 16px}
+.si-pw::placeholder{letter-spacing:normal;font-size:17px;color:var(--ink3)}
+.si-pw:focus{box-shadow:0 0 0 2px var(--peri)}
+.si-err{color:var(--blush);font-size:15px;min-height:22px;margin:10px 0 2px}
+.si .cta{margin-top:6px}
 
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
   background:rgba(29,29,31,.9);color:#fff;padding:10px 16px;border-radius:999px;font-size:15px;
@@ -187,13 +242,21 @@ input:focus{outline:none}
 .cmp-tot .cmp-tr.tot{color:var(--ink);font-weight:700;font-size:17px;border-top:.5px solid rgba(75,63,184,.15);margin-top:6px;padding-top:8px}
 .cmp-v{font-size:21px;font-weight:700;margin-top:12px;color:var(--ink)}
 .cmp-note{font-size:14px;color:var(--ink2);margin:6px 0 0}
-@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.icon.spin svg,.skel{animation:none}.toast,.sw,.sw span{transition:none}}
 </style>
 </head>
-<body>
+<body class="out">
 <main class="page">
   <div class="top">
     <button class="state" id="state" type="button" aria-live="polite"></button>
+    <div class="tools" id="tools">
+      <button class="icon" id="refresh" type="button" aria-label="Refresh" title="Refresh">
+        <svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg>
+      </button>
+      <button class="icon" id="signout" type="button" aria-label="Sign out" title="Sign out">
+        <svg viewBox="0 0 24 24"><rect x="4.5" y="11" width="15" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>
+      </button>
+    </div>
   </div>
   <h1>PPR Logistics</h1>
   <p class="sub" id="sub">Order from the 12 May 2026 price list</p>
@@ -205,11 +268,17 @@ input:focus{outline:none}
 // Never run inside another site's page.
 if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ""; } }
 
-/* PPR Logistics order. Doesn't pull from anything: the price list is in this file, you pick
-   from it, set the amounts and it adds it all up. Money is kept in USD and shown in USD or AUD
-   at the rate set on the page. The order, saved orders and the rate stay on this device. */
+/* PPR Logistics order. Pick from the price list in this file, set the amounts and it adds it all up.
+   The order, the saved orders and the AUD rate live on the Google script, so every phone and computer
+   sees the same thing, and a change on one shows on the others within about 10 seconds. It needs the
+   password to open and signs itself out after 8 hours. The password is never in this file; it sits in
+   the script's own settings. Money is kept in USD and shown in USD or AUD. */
 (function () {
-  var RATE0 = 1.43;
+  // The Google script link. Paste the web app link between the quotes.
+  var EP = "https://script.google.com/macros/s/AKfycbwkfpbVjmepHpUEARAxJ0aF2AWNndlN5WhBbHwsrDQPbUxHsmVdQ13ZpHgyi9JTYwv5KA/exec";
+  var LIVE = /^https:\/\/script\.google\.com\/(a\/macros\/[\w.-]+|macros)\/s\/[\w-]+\/exec$/.test(EP);
+  var RATE0 = 1.43, POLL = 10000, MAXUP = 15 * 1024 * 1024;
+  var PACK0 = { box: 1.5, label: 0.15, ship: 260 };   // packaging defaults, in AUD
   // The 12 May 2026 price list: part number, name, more detail, USD for the box, vials in the box, other words to find it by.
   var LIST = [
     ["SM5", "Semaglutide 5mg", "", 45, 10],
@@ -347,13 +416,13 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   var STAGES = [["draft", "Not placed yet"], ["placed", "Order placed"], ["looking", "Being looked at"],
     ["payreq", "Payment requested"], ["paid", "Payment made"], ["ordered", "Ordered"],
     ["making", "Being made"], ["sent", "Sent"], ["delivered", "Delivered"]];
-  var K = { order: "pprorder.order", saves: "pprorder.saves", cur: "pprorder.cur", rate: "pprorder.rate" };
+  var K = { auth: "pprorder.auth", last: "pprorder.last", cur: "pprorder.cur", q: "pprorder.q" };
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function norm(s) { return String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9+]/g, ""); }
   function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
-  function newId() { return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function newId() { return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function r4(v) { return Math.round(v * 10000) / 10000; }
   function clip(s, n) { return String(s == null ? "" : s).replace(/[<>"`]/g, "").replace(/\s+/g, " ").trim().slice(0, n); }
 
@@ -364,50 +433,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   });
   var PK = {}; P.forEach(function (p) { PK[p.k] = p; });
 
-  var D = null, CUR = "usd", RATE = RATE0, WA = null, SAVES = [], saveT = null, toastT = null, ASK = null, CMP = { a: "cur", b: "" };
-
-  /* ---------- what's kept on this device ---------- */
-  function read(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
-  function fresh() { return { items: [], shipUsd: 0, status: "draft", history: [] }; }
-  function hasStage(s) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === s) return true; return false; }
-  function cleanItem(it) {
-    if (!it || !it.name) return null;
-    var k = it.k && PK[it.k] ? String(it.k) : "";
-    return { id: String(it.id || newId()), k: k, sku: clip(it.sku, 20), name: clip(it.name, 80),
-      box: Math.max(1, Math.round(+it.box) || (k ? PK[k].box : 10)),
-      qty: Math.max(0, Math.round(+it.qty) || 0), price: Math.max(0, +it.price || 0) };
-  }
-  function cleanLine(l) {
-    var c = cleanItem(l); if (!c) return null;
-    return { k: c.k, sku: c.sku, name: c.name, box: c.box, qty: c.qty, price: c.price };
-  }
-  function cleanOrder(o) {
-    if (!o || typeof o !== "object") return fresh();
-    var items = []; (Array.isArray(o.items) ? o.items : []).forEach(function (it) { var c = cleanItem(it); if (c) items.push(c); });
-    return { items: items, shipUsd: Math.max(0, +o.shipUsd || 0), status: hasStage(o.status) ? o.status : "draft",
-      history: (Array.isArray(o.history) ? o.history : []).filter(function (h) { return h && hasStage(h.s) && h.t; })
-        .map(function (h) { return { s: h.s, t: String(h.t) }; }) };
-  }
-  function readSaves() {
-    var a = read(K.saves); if (!Array.isArray(a)) return [];
-    return a.filter(function (x) { return x && x.id && Array.isArray(x.lines); }).map(function (x) {
-      return { id: String(x.id), label: clip(x.label, 40) || "Saved order", at: String(x.at || ""), shipUsd: Math.max(0, +x.shipUsd || 0),
-        lines: x.lines.map(cleanLine).filter(Boolean) };
-    });
-  }
-  function readRate() { var v = 0; try { v = parseFloat(localStorage.getItem(K.rate)); } catch (e) {} return v >= 0.5 && v <= 5 ? v : RATE0; }
-  function writeSaves() { try { localStorage.setItem(K.saves, JSON.stringify(SAVES)); return true; } catch (e) { return false; } }
-  function saveNow() {
-    clearTimeout(saveT); saveT = null;
-    try { localStorage.setItem(K.order, JSON.stringify(D)); state("saved", "Saved"); return true; }
-    catch (e) { state("err", "Not saved, tap to retry"); return false; }
-  }
-  function afterEdit() { if (saveNow() && D.status !== "draft") setWa(WA === "placed" ? "placed" : "change"); }
-  function queueSave() { clearTimeout(saveT); saveT = setTimeout(afterEdit, 250); }
-  function flush() { if (saveT) afterEdit(); }
-
+  var AUTH = null, SRV = null, D = null, V = -1, CUR = "usd", RATE = RATE0, WA = null, SAVES = null,
+    PR = { box: PACK0.box, label: PACK0.label, ship: PACK0.ship }, FILES = null, FV = -1, UPS = [], VIEWURL = "", filesBusy = false,
+    Q = [], INF = null, sendErr = false, NEEDR = false, busy = false,
+    sendT = null, pollT = null, outT = null, toastT = null, rendT = null, ASK = null, CMP = { a: "cur", b: "" };
   try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (e) {}
-  RATE = readRate(); D = cleanOrder(read(K.order)); SAVES = readSaves();
+  try { AUTH = JSON.parse(localStorage.getItem(K.auth) || "null"); } catch (e) { AUTH = null; }
+  // Changes that hadn't reached the script yet when the page was last closed go up again.
+  try { Q = (JSON.parse(localStorage.getItem(K.q) || "[]") || []).filter(function (o) { return o && typeof o.t === "string"; }); } catch (e) { Q = []; }
 
   function rate() { return RATE; }
   function show(usd) { return CUR === "aud" ? usd * rate() : usd; }
@@ -420,28 +453,261 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function fix(v) { return (Math.round(show(v) * 100) / 100).toFixed(2); }
   function toast(t) { var el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove("on"); }, 2200); }
   function state(kind, text) { var el = $("state"); el.className = "state" + (kind ? " " + kind : ""); el.textContent = text || ""; }
+  function clock() { return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+  function note(kind, title, text) {
+    var icon = kind === "ok"
+      ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>'
+      : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/></svg>';
+    $("body").innerHTML = '<div class="msg ' + kind + '">' + icon + '<h2>' + esc(title) + '</h2><p>' + esc(text) + '</p></div>';
+  }
   function stageIx(s) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === s) return i; return 0; }
+  function hasStage(s) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === s) return true; return false; }
   function fmtTime(t) {
     var d = new Date(t); if (isNaN(d)) return "";
     return d.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
   }
   function whenFor(s) { var t = ""; (D.history || []).forEach(function (h) { if (h.s === s) t = h.t; }); return t ? fmtTime(t) : ""; }
   function vials(n) { return n + (n === 1 ? " vial" : " vials"); }
-
-  /* ---------- the order ---------- */
-  function sums() {
-    var sub = 0, v = 0, prods = 0;
-    D.items.forEach(function (it) { if (it.qty > 0) { sub += it.qty * it.price; v += it.qty; prods++; } });
-    return { sub: sub, ship: D.shipUsd, total: sub + D.shipUsd, vials: v, prods: prods };
+  // Big uploads and downloads get longer before giving up.
+  function post(body, keep, ms) {
+    var ctrl = window.AbortController && !keep ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms || 25000) : null;
+    return fetch(EP, { method: "POST", redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined, keepalive: !!keep })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { clearTimeout(timer); return j; }, function (e) { clearTimeout(timer); throw e; });
   }
-  function itemOf(el) { var row = el.closest(".item"); return row ? D.items[+row.dataset.i] || null : null; }
+
+  /* ---------- signing in and out ----------
+     The phone saves the number password the first time and fills it in with Face ID after that. */
+  function signedIn() { return !!(AUTH && AUTH.pass && AUTH.exp > Date.now()); }
+  function armExpiry() {
+    clearTimeout(outT);
+    if (signedIn()) outT = setTimeout(function () { signOut(); }, Math.min(AUTH.exp - Date.now() + 500, 2147000000));
+  }
+  function signOut(manual) {
+    if (manual && AUTH) post({ action: "bye", pass: AUTH.pass }).catch(function () {});
+    // Signing out on purpose drops anything unsaved. Running out of time keeps it to send after the next sign in.
+    if (manual) { Q = []; INF = null; saveQ(); }
+    AUTH = null; SRV = null; D = null; V = -1; WA = null; SAVES = null; NEEDR = false; FILES = null; FV = -1;
+    clearTimeout(sendT); clearTimeout(pollT); clearTimeout(outT); closeSheet();
+    try { localStorage.removeItem(K.auth); localStorage.removeItem(K.last); } catch (e) {}
+    showSignIn("");
+  }
+  function showSignIn(msg) {
+    document.body.classList.add("out"); state("", "");
+    $("body").innerHTML =
+      '<form id="signin" class="si" novalidate autocomplete="on" action="#">' +
+        '<div class="si-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/></svg></div>' +
+        '<h2>PPR Logistics</h2>' +
+        // A name for the phone to save the password under, kept out of sight.
+        '<input type="text" name="username" autocomplete="username" value="PPR order" tabindex="-1" aria-hidden="true" style="display:none">' +
+        '<input class="si-pw" id="pw" name="password" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Password" aria-label="Password">' +
+        '<p class="si-err" id="siErr" role="alert">' + esc(msg) + '</p>' +
+        '<button class="cta" type="submit" id="siBtn">Sign in</button>' +
+      '</form>';
+    setTimeout(function () { var i = $("pw"); if (i) i.focus(); }, 50);
+  }
+  function signIn(pw) {
+    var btn = $("siBtn"), err = $("siErr");
+    if (!pw) { err.textContent = "Type the password first."; return; }
+    btn.disabled = true; btn.textContent = "Signing in"; err.textContent = "";
+    post({ action: "login", pw: pw }).then(function (j) {
+      if (j && j.ok && j.pass) {
+        AUTH = { pass: j.pass, exp: +j.exp };
+        try { localStorage.setItem(K.auth, JSON.stringify(AUTH)); } catch (e) {}
+        document.body.classList.remove("out"); armExpiry(); load(false);
+        if (Q.length) send();
+        return;
+      }
+      var e = j && j.error;
+      if ($("siErr")) $("siErr").textContent = e === "wrong_password" ? "That password isn't right." :
+        e === "locked" ? "Too many tries. Wait 10 minutes, then try again." :
+        e === "no_password" ? "Sign in isn't set up yet." : "Couldn't sign in. Try again.";
+    }).catch(function () { if ($("siErr")) $("siErr").textContent = "No connection. Check it and try again."; })
+      .then(function () { var b = $("siBtn"); if (b) { b.disabled = false; b.textContent = "Sign in"; } });
+  }
+
+  /* ---------- the order, as the script has it plus anything not sent yet ---------- */
+  function fresh() { return { items: [], shipUsd: 0, status: "draft", history: [], pack: { on: true, boxes: null, labels: null } }; }
+  function cnt(v) { return v == null || v === "" || !isFinite(+v) ? null : Math.max(0, Math.round(+v)); }
+  function cleanItem(it) {
+    if (!it || !it.name) return null;
+    var k = it.k && PK[it.k] ? String(it.k) : "";
+    return { id: String(it.id || newId()), k: k, sku: clip(it.sku, 20), name: clip(it.name, 80),
+      box: Math.max(1, Math.round(+it.box) || (k ? PK[k].box : 10)),
+      qty: Math.max(0, Math.round(+it.qty) || 0), price: Math.max(0, +it.price || 0) };
+  }
+  function cleanOrder(o) {
+    if (!o || typeof o !== "object") return fresh();
+    var items = []; (Array.isArray(o.items) ? o.items : []).forEach(function (it) { var c = cleanItem(it); if (c) items.push(c); });
+    var pk = o.pack || {};
+    return { items: items, shipUsd: Math.max(0, +o.shipUsd || 0), status: hasStage(o.status) ? o.status : "draft",
+      history: (Array.isArray(o.history) ? o.history : []).filter(function (h) { return h && hasStage(h.s) && h.t; })
+        .map(function (h) { return { s: h.s, t: String(h.t) }; }),
+      pack: { on: pk.on !== false, boxes: cnt(pk.boxes), labels: cnt(pk.labels) } };
+  }
+  function findIx(op) {
+    for (var i = 0; i < D.items.length; i++) if (D.items[i].id === op.id) return i;
+    if (op.k && op.t !== "del") for (var j = 0; j < D.items.length; j++) if (D.items[j].k === op.k) return j;
+    return -1;
+  }
+  // The same steps the script takes, done here straight away so the page never waits.
+  function applyLocal(op) {
+    if (!D || !op) return;
+    if (op.t === "ship") { D.shipUsd = Math.max(0, +op.v || 0); return; }
+    if (op.t === "pon") { D.pack.on = !!op.v; return; }
+    if (op.t === "pqty") { if (op.f === "boxes" || op.f === "labels") D.pack[op.f] = cnt(op.v); return; }
+    if (op.t === "pprice") { if (op.f === "box" || op.f === "label" || op.f === "ship") PR[op.f] = Math.max(0, +op.v || 0); return; }
+    if (op.t === "add") {
+      var it = cleanItem(op.it); if (!it) return;
+      for (var i = 0; i < D.items.length; i++) if (D.items[i].id === it.id || (it.k && D.items[i].k === it.k)) return;
+      D.items.push(it); return;
+    }
+    var ix = findIx(op); if (ix < 0) return;
+    if (op.t === "del") D.items.splice(ix, 1);
+    else if (op.t === "qty") D.items[ix].qty = Math.max(0, Math.round(+op.v) || 0);
+    else if (op.t === "price") D.items[ix].price = Math.max(0, +op.v || 0);
+  }
+  function typing() { var ae = document.activeElement; return !!(ae && ae.tagName === "INPUT" && $("body").contains(ae)); }
+  // Take the script's copy of the order, then put back on top anything still on its way up.
+  function adopt(j, cached) {
+    if (!cached && SRV && +j.v < SRV.v) return false;
+    SRV = { v: +j.v || 0, order: j.order, rate: j.rate, pack: j.pack };
+    V = SRV.v; RATE = +j.rate >= 0.5 && +j.rate <= 5 ? +j.rate : RATE0;
+    var pk = j.pack || {};
+    PR = { box: pk.box >= 0 ? +pk.box : PACK0.box, label: pk.label >= 0 ? +pk.label : PACK0.label, ship: pk.ship >= 0 ? +pk.ship : PACK0.ship };
+    D = cleanOrder(j.order);
+    (INF || []).forEach(applyLocal); Q.forEach(applyLocal);
+    if (!cached) remember();
+    if (typing()) { NEEDR = true; totals(); } else render();
+    if ($("addList")) addSearch();
+    if (!cached && j.fv != null && +j.fv !== FV) { FV = +j.fv; loadFiles(); }
+    return true;
+  }
+  function remember() { if (!SRV || !AUTH) return; try { localStorage.setItem(K.last, JSON.stringify({ exp: AUTH.exp, v: SRV.v, order: SRV.order, rate: SRV.rate, pack: SRV.pack })); } catch (e) {} }
+  function remembered() {
+    try { var c = JSON.parse(localStorage.getItem(K.last) || "null"); return c && AUTH && c.exp === AUTH.exp ? c : null; } catch (e) { return null; }
+  }
+  function saveQ() { try { localStorage.setItem(K.q, JSON.stringify((INF || []).concat(Q))); } catch (e) {} }
+
+  /* ---------- keeping in step with the script ---------- */
+  function load(manual) {
+    if (busy || !LIVE) return;
+    if (!signedIn()) { if (AUTH) signOut(); return; }
+    busy = true; if (manual) $("refresh").classList.add("spin");
+    if (!D) {
+      var c = remembered();
+      if (c) { adopt(c, true); state("", "Updating"); }
+      else $("body").innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+    }
+    post({ action: "get", v: SRV ? SRV.v : -1, pass: AUTH.pass }).then(function (j) {
+      if (!AUTH) return;
+      if (j && j.ok) {
+        if (j.same) { if (manual || $("state").textContent === "Updating") state("", "Updated " + clock()); return; }
+        if (adopt(j)) state("", "Updated " + clock());
+      } else if (j && j.error === "signed_out") signOut();
+      else throw new Error("bad answer");
+    }).catch(function () {
+      if (!AUTH) return;
+      if (D) { if (manual) toast("Couldn't refresh, showing the last order"); if ($("state").textContent === "Updating") state("", ""); }
+      else { state("", ""); note("bad", "Couldn't load the order", "Check your connection and tap refresh."); }
+    }).then(function () { busy = false; var r = $("refresh"); if (r) r.classList.remove("spin"); tick(); });
+  }
+  // Checks the script every 10 seconds while the page is open on screen.
+  function tick() {
+    clearTimeout(pollT);
+    if (!signedIn() || document.hidden) return;
+    pollT = setTimeout(function () {
+      if (!signedIn()) return;
+      if (INF) return tick();
+      if (Q.length) { send(); return tick(); }
+      load(false);
+    }, POLL);
+  }
+  function queue(op) {
+    applyLocal(op);
+    // Only the latest qty, price, shipping or packaging setting needs to go up.
+    if (/^(qty|price|ship|pon|pqty|pprice)$/.test(op.t))
+      Q = Q.filter(function (x) { return !(x.t === op.t && x.id === op.id && x.f === op.f); });
+    Q.push(op); saveQ();
+    state("saving", "Saving");
+    clearTimeout(sendT); sendT = setTimeout(send, 600);
+  }
+  function send(keep) {
+    clearTimeout(sendT);
+    if (INF || !Q.length || !LIVE) return;
+    if (!signedIn()) { if (AUTH) signOut(); return; }
+    var batch = Q; INF = batch; Q = []; saveQ();
+    state("saving", "Saving");
+    post({ action: "ops", ops: batch, pass: AUTH.pass }, keep).then(function (j) {
+      if (j && j.ok) {
+        INF = null; sendErr = false; saveQ();
+        if (!AUTH) return;
+        adopt(j);
+        if (Q.length) { state("saving", "Saving"); sendT = setTimeout(send, 300); }
+        else state("saved", "Saved");
+        if (D && D.status !== "draft") setWa(WA === "placed" ? "placed" : "change");
+      } else if (j && j.error === "signed_out") { Q = batch.concat(Q); INF = null; saveQ(); signOut(); }
+      else throw new Error("not saved");
+    }).catch(function () {
+      if (INF === batch) { Q = batch.concat(Q); INF = null; saveQ(); }
+      sendErr = true;
+      if (AUTH) state("err", "Not saved, tap to retry");
+    });
+  }
+  // Waits for anything still saving to land before doing something that needs the latest order.
+  function synced(fn, fail) {
+    var tries = 0;
+    if (Q.length && !INF) { sendErr = false; send(); }
+    (function wait() {
+      if (!AUTH) return fail && fail();
+      if (!INF && !Q.length) return fn();
+      if (!INF && sendErr) { if (fail) fail(); return toast("Couldn't save the last change, try again"); }
+      if (!INF) send();
+      if (++tries > 200) { if (fail) fail(); return toast("Still saving, try again"); }
+      setTimeout(wait, 150);
+    })();
+  }
+  function failed(j, what) {
+    if (j && j.error === "signed_out") { signOut(); return true; }
+    if (!j || !j.ok) { toast(what); return true; }
+    return false;
+  }
+
+  /* ---------- the order on screen ---------- */
+  function sums() {
+    var sub = 0, v = 0, prods = 0, pk = packNow();
+    D.items.forEach(function (it) { if (it.qty > 0) { sub += it.qty * it.price; v += it.qty; prods++; } });
+    var pack = pk.on ? pk.aud / rate() : 0;
+    return { sub: sub, ship: D.shipUsd, pack: pack, packOn: pk.on, total: sub + D.shipUsd + pack, vials: v, prods: prods };
+  }
+  /* ---------- packaging ----------
+     Custom boxes and vial labels, priced in AUD. By default it's one box per box of vials on the
+     order and one label per vial; type a number in to set it by hand. Its shipping only counts once
+     there's at least one box or label. */
+  function autoBoxes() { var n = 0; D.items.forEach(function (it) { if (it.qty > 0) n += Math.ceil(it.qty / (it.box || 10)); }); return n; }
+  function autoLabels() { var n = 0; D.items.forEach(function (it) { if (it.qty > 0) n += it.qty; }); return n; }
+  function packNow() {
+    var p = D.pack || { on: true, boxes: null, labels: null };
+    var boxes = p.boxes == null ? autoBoxes() : p.boxes, labels = p.labels == null ? autoLabels() : p.labels;
+    var b = boxes * PR.box, l = labels * PR.label, s = boxes + labels > 0 ? PR.ship : 0;
+    return { on: !!p.on, boxes: boxes, labels: labels, boxAud: b, labelAud: l, shipAud: s, aud: b + l + s };
+  }
+  function showAud(aud) { return CUR === "aud" ? aud : aud / rate(); }
+  function toAud(v) { return CUR === "aud" ? v : v * rate(); }
+  // Small unit prices keep a third decimal so 15c doesn't turn into 10c in USD.
+  function unitNum(v) { var r = Math.round(v * 1000) / 1000; return r < 1 && Math.round(r * 100) !== r * 100 ? r.toFixed(3) : r.toFixed(2); }
+  function unitMoney(v) { return "$" + unitNum(v); }
+  function byId(id) { for (var i = 0; i < D.items.length; i++) if (D.items[i].id === id) return D.items[i]; return null; }
+  function itemOf(el) { var row = el.closest(".item"); return row && D ? byId(row.dataset.id) : null; }
   function onOrder(k) { for (var i = 0; i < D.items.length; i++) if (D.items[i].k === k) return i; return -1; }
 
-  function rowHtml(it, i) {
+  function rowHtml(it) {
     // The part number, so the supplier knows exactly which one. Something typed in shows as Added.
     var pill = !it.k ? '<span class="pill add">Added</span>' : it.sku ? '<span class="pill">' + esc(it.sku) + '</span>' : '';
     var step = it.box || 10;
-    return '<div class="item" data-i="' + i + '">' +
+    return '<div class="item" data-id="' + esc(it.id) + '">' +
       '<div class="head"><span class="nm">' + esc(it.name) + '</span><span class="hr">' + pill +
         '<button type="button" class="x" data-act="remove" aria-label="Remove ' + esc(it.name) + '">&times;</button></span></div>' +
       '<div class="ctrls">' +
@@ -466,6 +732,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       '<div class="prog" aria-hidden="true">' + bars + '</div>' + acts + '</div>';
   }
   function render() {
+    if (!D) return;
+    NEEDR = false;
     var list = D.items.map(rowHtml).join("");
     if (!list) list = '<div class="empty">Nothing on the order yet. Add an item from the price list.</div>';
     $("body").innerHTML = statusCard() + '<div id="waBox">' + waCard() + '</div>' +
@@ -477,24 +745,65 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         '<button type="button" class="addrow" id="addBtn">+ Add item</button>' +
         '<div class="ship"><div><span class="nm">Shipping</span><small>For the whole order</small></div>' +
           '<span class="money"><b>$</b><input data-f="ship" inputmode="decimal" value="' + fix(D.shipUsd) + '" aria-label="Shipping"></span></div>' +
-      '</div>' +
+      '</div>' + packHtml() +
       '<div class="total" aria-live="polite"><div class="lbl">Total</div><div class="big" id="tBig"></div><div class="alt" id="tAlt"></div>' +
         '<div class="rows"><div class="row"><span>Products</span><span id="tSub"></span></div>' +
         '<div class="row"><span>Shipping</span><span id="tShip"></span></div>' +
+        '<div class="row" id="tPackRow"><span>Packaging</span><span id="tPack"></span></div>' +
         '<div class="row"><span id="tCount"></span><span></span></div></div></div>' +
       '<div class="acts3"><button class="tint" id="saveFor" type="button">Save for later</button>' +
         '<button class="tint" id="savedBtn" type="button">Saved</button><button class="tint" id="cmpBtn" type="button">Compare</button></div>' +
       '<button class="cta" id="copy" type="button">Copy order</button>' +
-      '<button class="ghost" id="reset" type="button">Clear order</button>';
+      '<button class="ghost" id="reset" type="button">Clear order</button>' +
+      '<div id="dzBox">' + filesHtml() + '</div>';
     totals();
   }
+  function packRow(f, name, rule, pf, unit, qty, line) {
+    var auto = D.pack[f] == null, step = f === "labels" ? 10 : 1;
+    return '<div class="item" data-prow="' + f + '">' +
+      '<div class="head"><span class="nm">' + name + '</span><span class="hr" data-ptag="' + f + '">' + packTag(f, rule, auto) + '</span></div>' +
+      '<div class="ctrls">' +
+        '<label class="fld"><span class="cap">Qty</span><span class="step">' +
+          '<button type="button" data-pact="minus" aria-label="' + step + ' fewer">&minus;</button>' +
+          '<input data-pq="' + f + '" inputmode="numeric" value="' + qty + '" aria-label="How many ' + name.toLowerCase() + '">' +
+          '<button type="button" data-pact="plus" aria-label="' + step + ' more">+</button></span></label>' +
+        '<label class="fld"><span class="cap">Price each</span><span class="money"><b>$</b>' +
+          '<input data-pf="' + pf + '" inputmode="decimal" value="' + unitNum(showAud(unit)) + '" aria-label="Price for each of the ' + name.toLowerCase() + '"></span></label>' +
+        '<span class="line" data-pline="' + f + '">' + money(showAud(line)) + '</span>' +
+      '</div></div>';
+  }
+  function packTag(f, rule, auto) {
+    return auto ? '<span class="pill">' + rule + '</span>' : '<button type="button" class="pill add" data-pauto="' + f + '">Match order</button>';
+  }
+  function packHtml() {
+    var p = packNow();
+    var head = '<div class="pk-head"><div><span class="nm">Packaging</span><small>Custom boxes and vial labels, in AUD</small></div>' +
+      '<button type="button" class="sw' + (p.on ? " on" : "") + '" id="packOn" role="switch" aria-checked="' + p.on + '" aria-label="Add packaging to this quote"><span></span></button></div>';
+    if (!p.on) return '<div class="group pk">' + head + '<div class="empty pk-off">Not on this quote.</div></div>';
+    return '<div class="group pk">' + head +
+      packRow("boxes", "Custom boxes", "1 per box", "box", PR.box, p.boxes, p.boxAud) +
+      packRow("labels", "Vial labels", "1 per vial", "label", PR.label, p.labels, p.labelAud) +
+      '<div class="ship"><div><span class="nm">Packaging shipping</span><small>For the boxes and labels</small></div>' +
+        '<span class="money"><b>$</b><input data-pf="ship" inputmode="decimal" value="' + fixAud(PR.ship) + '" aria-label="Packaging shipping"></span></div></div>';
+  }
+  function fixAud(aud) { return (Math.round(showAud(aud) * 100) / 100).toFixed(2); }
   function totals() {
+    if (!D || !$("tBig")) return;
     var t = sums(), other = CUR === "aud" ? "usd" : "aud";
     $("tBig").textContent = money(show(t.total), CUR);
     $("tAlt").textContent = "About " + money(other === "aud" ? t.total * rate() : t.total, other);
     $("tSub").textContent = money(show(t.sub));
     $("tShip").textContent = money(show(t.ship));
+    $("tPackRow").style.display = t.packOn ? "" : "none";
+    $("tPack").textContent = money(show(t.pack));
     $("tCount").textContent = t.prods + (t.prods === 1 ? " product, " : " products, ") + t.vials + " vials";
+    var p = packNow(), ae = document.activeElement;
+    ["boxes", "labels"].forEach(function (f) {
+      var auto = D.pack[f] == null, inp = document.querySelector('[data-pq="' + f + '"]'), ln = document.querySelector('[data-pline="' + f + '"]'), tg = document.querySelector('[data-ptag="' + f + '"]');
+      if (inp && inp !== ae) inp.value = p[f];
+      if (ln) ln.textContent = money(showAud(f === "boxes" ? p.boxAud : p.labelAud));
+      if (tg) tg.innerHTML = packTag(f, f === "boxes" ? "1 per box" : "1 per vial", auto);
+    });
     Array.prototype.forEach.call(document.querySelectorAll(".item"), function (row) {
       var it = itemOf(row), el = row.querySelector("[data-line]");
       if (it && el) el.textContent = money(show(it.qty * it.price));
@@ -511,6 +820,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     });
     return out;
   }
+  function packLines() {
+    var p = packNow(), out = [];
+    if (!p.on) return out;
+    if (p.boxes > 0) out.push("Custom boxes x " + p.boxes + " at " + unitMoney(showAud(PR.box)) + " = " + money(showAud(p.boxAud)));
+    if (p.labels > 0) out.push("Vial labels x " + p.labels + " at " + unitMoney(showAud(PR.label)) + " = " + money(showAud(p.labelAud)));
+    if (p.shipAud > 0) out.push("Packaging shipping " + money(showAud(p.shipAud)));
+    return out;
+  }
   function waMsg(kind) {
     var lines = ["PPR Logistics", kind === "placed" ? "An order has been placed." :
       kind === "status" ? "Order update: " + STAGES[stageIx(D.status)][1] + "." : "The order was changed."];
@@ -518,8 +835,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       lines.push("");
       orderLines().forEach(function (l) { lines.push(l); });
       lines.push("Shipping " + money(show(D.shipUsd)));
+      packLines().forEach(function (l) { lines.push(l); });
       lines.push("Total " + money(show(sums().total), CUR));
     }
+    lines.push("", location.href.split("#")[0]);
     return lines.join("\n");
   }
   function waCard() {
@@ -537,21 +856,34 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function setStatus(st) {
     if (!D || st === D.status) { closeSheet(); return; }
     if (st !== "draft" && !sums().prods) { closeSheet(); return toast("Add something to the order first"); }
-    var ix = stageIx(st), label = STAGES[ix][1], placing = st === "placed" && D.status === "draft";
+    var label = STAGES[stageIx(st)][1], placing = st === "placed" && D.status === "draft";
     ask(placing ? "Place this order?" : "Change the status to " + label + "?", placing ? "Place order" : "Change status").then(function (yes) {
       if (!yes) return;
-      // Going back a step takes the later steps off the history.
-      D.history = D.history.filter(function (h) { return stageIx(h.s) < ix; });
-      if (ix > 0) D.history.push({ s: st, t: new Date().toISOString() });
-      D.status = st; render(); saveNow();
-      setWa(st === "placed" ? "placed" : "status");
+      state("saving", "Saving");
+      synced(function () {
+        post({ action: "status", status: st, pass: AUTH.pass }).then(function (j) {
+          if (j && j.error === "empty") { state("", ""); return toast("Add something to the order first"); }
+          if (j && j.ok) { if (!AUTH) return; adopt(j); state("saved", "Saved"); setWa(st === "placed" ? "placed" : "status"); }
+          else if (j && j.error === "signed_out") signOut();
+          else throw new Error("no");
+        }).catch(function () { state("err", "Not saved, tap to retry"); toast("Couldn't change the status, try again"); });
+      }, function () { state("err", "Not saved, tap to retry"); });
     });
   }
+  // Clearing and switching orders drop anything waiting to save, so it can't land on top of the new order.
+  function swap(body, what, done) {
+    clearTimeout(sendT); Q = []; saveQ();
+    (function go() {
+      if (INF) return setTimeout(go, 150);
+      state("saving", "Saving");
+      post(body).then(function (j) {
+        if (failed(j, "Couldn't " + what + ", try again")) { state("", ""); return; }
+        WA = null; adopt(j); state("saved", "Saved"); toast(done);
+      }).catch(function () { state("", ""); toast("Couldn't " + what + ", try again"); });
+    })();
+  }
   function startOver(msg, yes, done) {
-    ask(msg, yes).then(function (ok) {
-      if (!ok) return;
-      D = fresh(); WA = null; saveNow(); render(); toast(done);
-    });
+    ask(msg, yes).then(function (ok) { if (ok) swap({ action: "clear", pass: AUTH.pass }, "clear it", done); });
   }
 
   /* ---------- sheets ---------- */
@@ -562,6 +894,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   }
   function closeSheet() {
     var m = $("mask"); if (m) m.classList.remove("on"); var s = $("sheet"); if (s) { s.innerHTML = ""; s.className = "sheet"; }
+    if (VIEWURL) { var u = VIEWURL; VIEWURL = ""; setTimeout(function () { try { URL.revokeObjectURL(u); } catch (e) {} }, 60000); }
     if (ASK) { var r = ASK; ASK = null; r(false); }
   }
   // Asks inside the page instead of a browser pop up, which browsers let people block.
@@ -607,8 +940,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       '<span class="pr">' + money(show(p.kit)) + '</span></button>';
   }
   function addSearch() {
-    var box = $("addList"); if (!box) return;
-    var q = $("addQ").value.trim(), ql = q.toLowerCase(), list = addMatches(q);
+    var box = $("addList"), qi = $("addQ"); if (!box || !qi || !D) return;
+    var q = qi.value.trim(), ql = q.toLowerCase(), list = addMatches(q);
     var html = list.map(optHtml).join("");
     if (q && !P.some(function (p) { return p.name.toLowerCase() === ql; }))
       html += '<button type="button" class="opt new" data-new="1"><span class="ck"></span><span class="ot">Add ' + esc(q) + ' as a new item</span></button>';
@@ -617,75 +950,100 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function togglePk(k, btn) {
     var p = PK[k]; if (!p) return;
     var i = onOrder(k), on;
-    if (i >= 0) { D.items.splice(i, 1); on = false; toast(p.name + " removed"); }
-    else { D.items.push({ id: newId(), k: p.k, sku: p.sku, name: p.name, box: p.box, qty: p.box, price: p.each }); on = true; toast(p.name + " added"); }
+    if (i >= 0) { queue({ t: "del", id: D.items[i].id }); on = false; toast(p.name + " removed"); }
+    else { queue({ t: "add", it: { id: newId(), k: p.k, sku: p.sku, name: p.name, box: p.box, qty: p.box, price: p.each } }); on = true; toast(p.name + " added"); }
     if (btn) {
       btn.classList.toggle("on", on); btn.setAttribute("aria-pressed", on);
       btn.querySelector(".ck").innerHTML = on ? "&#10003;" : "";
     }
-    render(); queueSave();
+    render();
   }
   function addNew(name) {
     name = clip(name, 60);
     if (!name) return;
-    D.items.push({ id: newId(), k: "", sku: "", name: name, box: 10, qty: 10, price: 0 });
-    closeSheet(); render(); queueSave(); toast(name + " added");
+    queue({ t: "add", it: { id: newId(), k: "", sku: "", name: name, box: 10, qty: 10, price: 0 } });
+    closeSheet(); render(); toast(name + " added");
   }
   function removeRow(btn) {
-    var row = btn.closest(".item"), gone = D.items.splice(+row.dataset.i, 1)[0];
-    render(); queueSave(); if (gone) toast(gone.name + " removed");
+    var it = itemOf(btn); if (!it) return;
+    queue({ t: "del", id: it.id }); render(); toast(it.name + " removed");
   }
 
-  /* ---------- exchange rate ---------- */
+  /* ---------- exchange rate, the same for everyone ---------- */
   function openRate() {
-    openSheet('<h2>Exchange rate</h2><p class="sh-sub">The price list is in USD. Set what 1 USD is in AUD.</p>' +
+    openSheet('<h2>Exchange rate</h2><p class="sh-sub">The price list is in USD. Set what 1 USD is in AUD. It changes for everyone.</p>' +
       '<div class="group"><label class="si-row"><span class="cap">1 USD in AUD</span><input id="rateIn" inputmode="decimal" autocomplete="off" value="' + rate().toFixed(2) + '"></label></div>' +
       '<button class="cta" id="rateGo" type="button">Save</button><button class="ghost" data-x="1" type="button">Cancel</button>');
     setTimeout(function () { var i = $("rateIn"); if (i) { i.focus(); i.select(); } }, 60);
   }
   function saveRate() {
+    var btn = $("rateGo"); if (!btn || btn.disabled) return;
     var v = num($("rateIn").value);
     if (!(v >= 0.5 && v <= 5)) return toast("Type a rate like 1.43");
-    RATE = r4(v); try { localStorage.setItem(K.rate, String(RATE)); } catch (e) {}
-    closeSheet(); render(); toast("1 USD is now " + RATE.toFixed(2) + " AUD");
+    function undo() { var b = $("rateGo"); if (b) { b.disabled = false; b.textContent = "Save"; } }
+    btn.disabled = true; btn.textContent = "Saving";
+    post({ action: "rate", rate: v, pass: AUTH.pass }).then(function (j) {
+      if (failed(j, "Couldn't change the rate, try again")) return undo();
+      closeSheet(); adopt(j); toast("1 USD is now " + RATE.toFixed(2) + " AUD");
+    }).catch(function () { undo(); toast("Couldn't change the rate, try again"); });
   }
 
   /* ---------- saved orders and compare ----------
-     A saved order is a copy of the order as it was, kept on this device. Compare puts any two side
-     by side: this order as it is now, or any saved one. Money is USD underneath and shown in
-     whichever currency is picked. */
+     A saved order is a copy of the order as it was, kept on the script so every device sees it.
+     Compare puts any two side by side: this order as it is now, or any saved one. Money is USD
+     underneath and shown in whichever currency is picked. */
   function curLines() {
     return D.items.filter(function (it) { return it.qty > 0; }).map(function (it) { return { k: it.k, sku: it.sku, name: it.name, box: it.box, qty: it.qty, price: it.price }; });
   }
+  function curPack() {
+    var p = packNow();
+    return { on: p.on, boxes: p.boxes, labels: p.labels, mb: D.pack.boxes != null, ml: D.pack.labels != null, box: PR.box, label: PR.label, ship: PR.ship };
+  }
+  // What a packaging snapshot comes to, in AUD, or nothing when it was switched off.
+  function packAudOf(p) { if (!p || !p.on) return 0; return p.boxes * p.box + p.labels * p.label + (p.boxes + p.labels > 0 ? p.ship : 0); }
   function srcOf(key) {
-    if (key === "cur") return D ? { label: "This order", lines: curLines(), ship: D.shipUsd } : null;
-    var r = null; SAVES.forEach(function (x) { if (x.id === key) r = x; });
-    return r ? { label: r.label, lines: r.lines || [], ship: +r.shipUsd || 0, at: r.at } : null;
+    if (key === "cur") return D ? { label: "This order", lines: curLines(), ship: D.shipUsd, pack: curPack() } : null;
+    var r = null; (SAVES || []).forEach(function (x) { if (x.id === key) r = x; });
+    return r ? { label: r.label, lines: r.lines || [], ship: +r.shipUsd || 0, at: r.at, pack: r.pack || null } : null;
   }
   function sumOf(src) {
     var sub = 0, v = 0; src.lines.forEach(function (l) { sub += l.qty * l.price; v += l.qty; });
-    return { sub: sub, vials: v, total: sub + src.ship, prods: src.lines.length };
+    var pack = packAudOf(src.pack) / rate();
+    return { sub: sub, vials: v, pack: pack, packOn: !!(src.pack && src.pack.on), total: sub + src.ship + pack, prods: src.lines.length };
   }
   function countText(t) { return t.prods + (t.prods === 1 ? " product, " : " products, ") + t.vials + " vials"; }
   function fmtDay(t) { var d = new Date(t); return isNaN(d) ? "" : d.toLocaleString([], { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); }
+  function withSaves(title, then) {
+    openSheet('<h2>' + esc(title) + '</h2><p class="sh-sub">Loading</p>');
+    post({ action: "saves", pass: AUTH.pass }).then(function (j) {
+      if (failed(j, "Couldn't load saved orders, try again")) return;
+      SAVES = j.saves || []; then();
+    }).catch(function () { toast("Couldn't load saved orders, try again"); });
+  }
   function openSaveFor() {
     if (!D || !sums().prods) return toast("Add something to the order first");
     var d = new Date(), def = "Order " + d.getDate() + " " + d.toLocaleString("en-AU", { month: "short" });
     openSheet('<h2>Save for later</h2><p class="sh-sub">Keeps a copy of this order as it is now, with its items, prices and shipping. ' +
-      'It stays on this device.</p>' +
+      'Anyone with the password can see saved orders.</p>' +
       '<div class="group"><label class="si-row"><span class="cap">Name</span><input id="svName" maxlength="40" autocomplete="off" value="' + esc(def) + '"></label></div>' +
       '<button class="cta" id="svGo" type="button">Save</button><button class="ghost" data-x="1" type="button">Cancel</button>');
     setTimeout(function () { var i = $("svName"); if (i) { i.focus(); i.select(); } }, 60);
   }
   function doSaveFor() {
     var btn = $("svGo"); if (!btn || btn.disabled) return;
-    var d = new Date(), label = clip($("svName").value, 40) || ("Order " + d.getDate() + " " + d.toLocaleString("en-AU", { month: "short" }));
-    SAVES.unshift({ id: newId(), label: label, at: d.toISOString(), lines: curLines(), shipUsd: r4(D.shipUsd) });
-    if (!writeSaves()) { SAVES.shift(); return toast("Couldn't save it on this device"); }
-    closeSheet(); toast("Saved as " + label);
+    var label = $("svName").value;
+    function undo() { var b = $("svGo"); if (b) { b.disabled = false; b.textContent = "Save"; } }
+    btn.disabled = true; btn.textContent = "Saving";
+    synced(function () {
+      post({ action: "saveas", pass: AUTH.pass, label: label, lines: curLines(), shipUsd: r4(D.shipUsd), pack: curPack() }).then(function (j) {
+        if (j && j.error === "too_many") { undo(); return toast("Too many saved orders, delete some first"); }
+        if (failed(j, "Couldn't save it, try again")) return undo();
+        SAVES = j.saves || SAVES; closeSheet(); toast("Saved as " + j.label);
+      }).catch(function () { undo(); toast("Couldn't save it, try again"); });
+    }, undo);
   }
   function drawSaved() {
-    var list = SAVES.map(function (x) {
+    var list = (SAVES || []).map(function (x) {
       var t = sumOf(srcOf(x.id));
       return '<button type="button" class="opt sv" data-sv="' + esc(x.id) + '"><span class="ot"><b>' + esc(x.label) + '</b>' +
         '<span class="om">' + esc(fmtDay(x.at)) + ', ' + countText(t) + '</span></span><span class="sv-t">' + money(show(t.total)) + '</span></button>';
@@ -693,6 +1051,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     openSheet('<h2>Saved orders</h2><p class="sh-sub">' + (list ? "Tap one to see it, compare it or use it." : "") + '</p>' +
       (list ? '<div class="opts">' + list + '</div>' : '<p class="empty">Nothing saved yet. Tap Save for later under the total to keep a copy of this order.</p>'));
   }
+  function openSaved() { withSaves("Saved orders", drawSaved); }
   function openSavedOne(id) {
     var s = srcOf(id); if (!s) return drawSaved();
     var t = sumOf(s);
@@ -700,7 +1059,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       '<div class="group">' + s.lines.map(function (l) {
         return '<div class="sv-line"><span class="nm">' + esc(l.name) + '</span><span class="sv-q">' + l.qty + ' x ' + money(show(l.price)) + '</span>' +
           '<span class="sv-v">' + money(show(l.qty * l.price)) + '</span></div>';
-      }).join("") + '<div class="sv-line"><span class="nm">Shipping</span><span class="sv-v">' + money(show(s.ship)) + '</span></div></div>' +
+      }).join("") + '<div class="sv-line"><span class="nm">Shipping</span><span class="sv-v">' + money(show(s.ship)) + '</span></div>' +
+      (t.packOn ? '<div class="sv-line"><span class="nm">Packaging</span><span class="sv-q">' + s.pack.boxes + ' boxes, ' + s.pack.labels + ' labels</span><span class="sv-v">' + money(show(t.pack)) + '</span></div>' : '') +
+      '</div>' +
       '<div class="total"><div class="lbl">Total</div><div class="big">' + money(show(t.total), CUR) + '</div><div class="alt">' + countText(t) + '</div></div>' +
       '<button class="cta" type="button" data-cmpwith="' + esc(id) + '">Compare with this order</button>' +
       '<button class="tint wide" type="button" data-use="' + esc(id) + '">Make this the current order</button>' +
@@ -709,32 +1070,32 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function useSave(id) {
     var s = srcOf(id); if (!s) return;
     ask("Make " + s.label + " the current order? What's on the order now is replaced, and the status goes back to Not placed yet.", "Make it current").then(function (yes) {
-      if (!yes) return;
-      D = { items: s.lines.map(cleanItem).filter(Boolean), shipUsd: s.ship, status: "draft", history: [] };
-      WA = null; saveNow(); render(); toast(s.label + " is now the current order");
+      if (yes) swap({ action: "usesave", id: id, pass: AUTH.pass }, "switch orders", s.label + " is now the current order");
     });
   }
   function delSave(id) {
     var s = srcOf(id); if (!s) return;
     ask("Delete " + s.label + "? This can't be undone.", "Delete").then(function (yes) {
       if (!yes) return;
-      var keep = SAVES;
-      SAVES = SAVES.filter(function (x) { return x.id !== id; });
-      if (!writeSaves()) { SAVES = keep; return toast("Couldn't delete it, try again"); }
-      if (CMP.b === id) CMP.b = ""; if (CMP.a === id) CMP.a = "cur";
-      toast("Deleted"); drawSaved();
+      post({ action: "delsave", id: id, pass: AUTH.pass }).then(function (j) {
+        if (failed(j, "Couldn't delete it, try again")) return;
+        SAVES = j.saves || []; if (CMP.b === id) CMP.b = ""; if (CMP.a === id) CMP.a = "cur";
+        toast("Deleted"); drawSaved();
+      }).catch(function () { toast("Couldn't delete it, try again"); });
     });
   }
   function openCompare(a, b) {
-    if (!SAVES.length) {
-      openSheet('<h2>Compare</h2><p class="sh-sub">Save an order for later first. Then you can put it side by side with this one, or with another saved order.</p>' +
-        '<button class="cta" id="saveFor" type="button">Save this order for later</button>');
-      return;
-    }
-    CMP.a = a || CMP.a || "cur"; CMP.b = b || CMP.b || SAVES[0].id;
-    if (!srcOf(CMP.a)) CMP.a = "cur";
-    if (!srcOf(CMP.b)) CMP.b = SAVES[0].id;
-    drawCompare();
+    withSaves("Compare", function () {
+      if (!SAVES.length) {
+        openSheet('<h2>Compare</h2><p class="sh-sub">Save an order for later first. Then you can put it side by side with this one, or with another saved order.</p>' +
+          '<button class="cta" id="saveFor" type="button">Save this order for later</button>');
+        return;
+      }
+      CMP.a = a || CMP.a || "cur"; CMP.b = b || CMP.b || SAVES[0].id;
+      if (!srcOf(CMP.a)) CMP.a = "cur";
+      if (!srcOf(CMP.b)) CMP.b = SAVES[0].id;
+      drawCompare();
+    });
   }
   function optList(sel) {
     return '<option value="cur"' + (sel === "cur" ? " selected" : "") + '>This order</option>' + SAVES.map(function (x) {
@@ -755,7 +1116,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   }
   function drawCompare() {
     var A = srcOf(CMP.a), B = srcOf(CMP.b);
-    if (!A || !B) { closeSheet(); return; }
+    if (!A || !B) { closeSheet(); return toast("Give it a second, the order is still loading"); }
     var ma = merged(A), mb = merged(B), keys = ma.keys.slice(), unlike = false;
     mb.keys.forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
     var rows = keys.map(function (k) {
@@ -780,6 +1141,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       '<div class="total cmp-tot"><div class="cmp-tr th"><span></span><span>A</span><span>B</span></div>' +
         '<div class="cmp-tr"><span>Products</span><span>' + money(show(ta.sub)) + '</span><span>' + money(show(tb.sub)) + '</span></div>' +
         '<div class="cmp-tr"><span>Shipping</span><span>' + money(show(A.ship)) + '</span><span>' + money(show(B.ship)) + '</span></div>' +
+        '<div class="cmp-tr"><span>Packaging</span><span>' + (ta.packOn ? money(show(ta.pack)) : "Off") + '</span><span>' + (tb.packOn ? money(show(tb.pack)) : "Off") + '</span></div>' +
         '<div class="cmp-tr tot"><span>Total</span><span>' + money(show(ta.total)) + '</span><span>' + money(show(tb.total)) + '</span></div>' +
         '<div class="cmp-v">' + esc(verdict) + '</div>' +
         (unlike ? '<p class="cmp-note">They don\'t have exactly the same items and amounts, so check the lines below.</p>' : '') + '</div>' +
@@ -788,8 +1150,114 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("sheet").scrollTop = y;
   }
 
+  /* ---------- designs ----------
+     Any file, up to 15 MB each. Pictures get a small preview made here before they go up. They're kept
+     in a Drive folder on the script, so everyone signed in sees the same ones. */
+  function sizeText(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+  function extOf(name) { var m = /\.([a-z0-9]{1,5})$/i.exec(String(name)); return m ? m[1].toUpperCase() : "FILE"; }
+  function filesHtml() {
+    var rows = (FILES || []).map(function (f) {
+      var th = f.thumb ? '<img class="fth" src="' + esc(f.thumb) + '" alt="">' : '<span class="fth ext">' + esc(extOf(f.name)) + '</span>';
+      return '<button type="button" class="opt fl" data-file="' + esc(f.id) + '">' + th +
+        '<span class="ot"><span class="fnm">' + esc(f.name) + '</span><span class="om">' + esc(sizeText(+f.size || 0) + ", " + fmtDay(f.at)) + '</span></span></button>';
+    }).join("") + UPS.map(function (n) {
+      return '<div class="opt fl up"><span class="fth ext">' + esc(extOf(n)) + '</span><span class="ot"><span class="fnm">' + esc(n) + '</span><span class="om">Uploading</span></span></div>';
+    }).join("");
+    if (!rows) rows = '<div class="empty">' + (FILES ? "No designs yet." : "Loading") + '</div>';
+    return '<div class="group dz"><div class="pk-head"><div><span class="nm">Designs</span><small>Box and label artwork, everyone sees these</small></div></div>' +
+      rows + '<button type="button" class="addrow" id="upBtn">+ Upload design</button>' +
+      '<input type="file" id="upIn" multiple hidden></div>';
+  }
+  function drawFiles() { var box = $("dzBox"); if (box) box.innerHTML = filesHtml(); }
+  function loadFiles() {
+    if (filesBusy || !AUTH) return;
+    filesBusy = true;
+    post({ action: "files", pass: AUTH.pass }).then(function (j) {
+      if (j && j.ok) { FILES = j.files || []; drawFiles(); }
+      else if (j && j.error === "signed_out") signOut();
+    }).catch(function () {}).then(function () { filesBusy = false; });
+  }
+  function readB64(file) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { var s = String(r.result || ""); res(s.slice(s.indexOf(",") + 1)); };
+      r.onerror = function () { rej(new Error("read")); };
+      r.readAsDataURL(file);
+    });
+  }
+  function makeThumb(file) {
+    return new Promise(function (res) {
+      if (!/^image\//.test(file.type || "") || !window.URL) return res("");
+      var url = URL.createObjectURL(file), img = new Image(), done = false;
+      function end(v) { if (done) return; done = true; try { URL.revokeObjectURL(url); } catch (e) {} res(v); }
+      img.onload = function () {
+        try {
+          var s = Math.min(1, 200 / Math.max(img.naturalWidth || 1, img.naturalHeight || 1)), c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(img.naturalWidth * s)); c.height = Math.max(1, Math.round(img.naturalHeight * s));
+          var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+          var d = c.toDataURL("image/jpeg", 0.72); end(d.length < 60000 ? d : "");
+        } catch (e) { end(""); }
+      };
+      img.onerror = function () { end(""); };
+      setTimeout(function () { end(""); }, 8000);
+      img.src = url;
+    });
+  }
+  function upload(list) {
+    list = Array.prototype.slice.call(list || []);
+    var ok = list.filter(function (f) { if (f.size > MAXUP) { toast(f.name + " is over 15 MB, upload a smaller copy"); return false; } return f.size > 0; });
+    if (!ok.length) return;
+    UPS = UPS.concat(ok.map(function (f) { return f.name; })); drawFiles();
+    (function next(i) {
+      if (i >= ok.length) return;
+      var f = ok[i];
+      state("saving", "Uploading" + (ok.length > 1 ? " " + (i + 1) + " of " + ok.length : ""));
+      Promise.all([readB64(f), makeThumb(f)]).then(function (r) {
+        if (!AUTH) throw new Error("out");
+        return post({ action: "upload", pass: AUTH.pass, name: f.name, mime: f.type || "", data: r[0], thumb: r[1] }, false, 300000);
+      }).then(function (j) {
+        if (j && j.error === "signed_out") return signOut();
+        if (j && j.error === "too_big") throw new Error("big");
+        if (!j || !j.ok) throw new Error("no");
+        FILES = j.files || FILES; FV = +j.fv; adopt(j);
+        state("saved", "Uploaded");
+      }).catch(function () { if (AUTH) { toast("Couldn't upload " + f.name + ", try again"); state("", ""); } })
+        .then(function () { var at = UPS.indexOf(f.name); if (at >= 0) UPS.splice(at, 1); drawFiles(); next(i + 1); });
+    })(0);
+  }
+  function fileMeta(id) { var r = null; (FILES || []).forEach(function (f) { if (f.id === id) r = f; }); return r; }
+  function openFile(id) {
+    var f = fileMeta(id); if (!f) return;
+    var pic = /^image\//.test(f.mime || "");
+    openSheet('<h2 class="ask">' + esc(f.name) + '</h2><p class="sh-sub">' + esc(sizeText(+f.size || 0) + ", " + fmtDay(f.at)) + '</p>' +
+      '<div class="pv" id="pv"><span class="pv-wait">Loading</span></div>' +
+      '<a class="cta lnk off" id="fOpen" target="_blank" rel="noopener">Open</a>' +
+      '<button class="ghost danger" type="button" data-delfile="' + esc(f.id) + '">Delete</button>');
+    post({ action: "file", id: f.id, pass: AUTH.pass }, false, 180000).then(function (j) {
+      if (failed(j, "Couldn't open it, try again")) return;
+      if (!$("pv") || ($("sheet").querySelector("[data-delfile]") || {}).getAttribute("data-delfile") !== f.id) return;
+      var bin = atob(j.data || ""), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      if (VIEWURL) { try { URL.revokeObjectURL(VIEWURL); } catch (e) {} }
+      VIEWURL = URL.createObjectURL(new Blob([bytes], { type: j.mime || "application/octet-stream" }));
+      $("pv").innerHTML = pic ? '<img src="' + VIEWURL + '" alt="' + esc(f.name) + '">' : '<span class="fth ext big">' + esc(extOf(f.name)) + '</span>';
+      var a = $("fOpen"); a.href = VIEWURL; a.classList.remove("off");
+      if (!pic && !/pdf/.test(j.mime || "")) { a.setAttribute("download", f.name); a.textContent = "Download"; }
+    }).catch(function () { toast("Couldn't open it, try again"); });
+  }
+  function delFile(id) {
+    var f = fileMeta(id); if (!f) return;
+    ask("Delete " + f.name + "? It goes for everyone.", "Delete").then(function (yes) {
+      if (!yes) return;
+      post({ action: "delfile", id: id, pass: AUTH.pass }).then(function (j) {
+        if (failed(j, "Couldn't delete it, try again")) return;
+        FILES = j.files || []; FV = +j.fv; adopt(j); drawFiles(); toast("Deleted");
+      }).catch(function () { toast("Couldn't delete it, try again"); });
+    });
+  }
+
   function copy() {
-    var t = ["PPR order"].concat(orderLines(), ["Shipping " + money(show(D.shipUsd)), "Total " + money(show(sums().total), CUR)]).join("\n");
+    var t = ["PPR order"].concat(orderLines(), ["Shipping " + money(show(D.shipUsd))], packLines(), ["Total " + money(show(sums().total), CUR)]).join("\n");
     function fallback() {
       var ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", "");
       ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
@@ -801,13 +1269,20 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   }
 
   /* ---------- one set of listeners for the whole page ---------- */
+  document.addEventListener("submit", function (e) {
+    if (e.target.id !== "signin") return;
+    e.preventDefault(); signIn($("pw").value);
+  });
   document.addEventListener("click", function (e) {
     if (e.target.id === "mask") return closeSheet();
     var a = e.target.closest("a");
     if (a && a.id === "waGo") { setTimeout(function () { setWa(null); }, 300); return; }
     var b = e.target.closest("button"); if (!b) return;
     var id = b.id;
-    if (id === "state") { if (b.classList.contains("err")) afterEdit(); return; }
+    if (id === "refresh") { if (Q.length && !INF) send(); return load(true); }
+    if (id === "signout") return signOut(true);
+    if (id === "state") { if (b.classList.contains("err")) { sendErr = false; send(); } return; }
+    if (!D && !b.closest("#sheet")) return;
     if (id === "copy") return copy();
     if (id === "reset") return startOver("Clear the order and start again? Everything on it comes off and the status goes back to Not placed yet.", "Clear order", "Order cleared");
     if (id === "place") return setStatus("placed");
@@ -820,7 +1295,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (id === "sheetX" || b.dataset.x) return closeSheet();
     if (id === "saveFor") return openSaveFor();
     if (id === "svGo") return doSaveFor();
-    if (id === "savedBtn") return drawSaved();
+    if (id === "savedBtn") return openSaved();
     if (id === "cmpBtn") return openCompare();
     if (b.dataset.sv) return openSavedOne(b.dataset.sv);
     if (b.dataset.cmpwith) return openCompare("cur", b.dataset.cmpwith);
@@ -830,6 +1305,17 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (id === "askNo") return answer(false);
     if (b.dataset.st) return setStatus(b.dataset.st);
     if (b.dataset.pk) return togglePk(b.dataset.pk, b);
+    if (id === "packOn") { queue({ t: "pon", v: !D.pack.on }); return render(); }
+    if (b.dataset.pauto) { queue({ t: "pqty", f: b.dataset.pauto, v: null }); return totals(); }
+    if (b.dataset.pact) {
+      var pr = b.closest("[data-prow]"); if (!pr) return;
+      var pf = pr.dataset.prow, cur = packNow()[pf], pstep = pf === "labels" ? 10 : 1;
+      queue({ t: "pqty", f: pf, v: b.dataset.pact === "plus" ? cur + pstep : Math.max(0, cur - pstep) });
+      return totals();
+    }
+    if (id === "upBtn") { var ui = $("upIn"); if (ui) ui.click(); return; }
+    if (b.dataset.file) return openFile(b.dataset.file);
+    if (b.dataset.delfile) return delFile(b.dataset.delfile);
     if (b.dataset["new"]) return addNew($("addQ").value);
     if (b.dataset.cur) {
       CUR = b.dataset.cur; try { localStorage.setItem(K.cur, CUR); } catch (err) {}
@@ -839,27 +1325,40 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (act === "remove") return removeRow(b);
     var it = itemOf(b); if (!it) return;
     var step = it.box || 10;
-    it.qty = act === "plus" ? it.qty + step : Math.max(0, it.qty - step);
-    b.closest(".item").querySelector('[data-f="qty"]').value = it.qty;
-    totals(); queueSave();
+    queue({ t: "qty", id: it.id, k: it.k, v: act === "plus" ? it.qty + step : Math.max(0, it.qty - step) });
+    var row = document.querySelector('.item[data-id="' + it.id + '"]'), now = byId(it.id);
+    if (row && now) row.querySelector('[data-f="qty"]').value = now.qty;
+    totals();
   });
   document.addEventListener("input", function (e) {
     if (e.target.id === "addQ") return addSearch();
-    var f = e.target.dataset && e.target.dataset.f; if (!f || !D) return;
-    if (f === "ship") D.shipUsd = toUsd(num(e.target.value));
+    var ds = e.target.dataset || {};
+    if (D && ds.pq) { queue({ t: "pqty", f: ds.pq, v: e.target.value.trim() === "" ? null : Math.round(num(e.target.value)) }); return totals(); }
+    if (D && ds.pf) { queue({ t: "pprice", f: ds.pf, v: r4(toAud(num(e.target.value))) }); return totals(); }
+    var f = ds.f; if (!f || !D) return;
+    if (f === "ship") queue({ t: "ship", v: r4(toUsd(num(e.target.value))) });
     else {
       var it = itemOf(e.target); if (!it) return;
-      if (f === "qty") it.qty = Math.round(num(e.target.value));
-      if (f === "price") it.price = toUsd(num(e.target.value));
+      if (f === "qty") queue({ t: "qty", id: it.id, k: it.k, v: Math.round(num(e.target.value)) });
+      if (f === "price") queue({ t: "price", id: it.id, k: it.k, v: r4(toUsd(num(e.target.value))) });
     }
-    totals(); queueSave();
+    totals();
   });
   document.addEventListener("change", function (e) {
     if (e.target.id === "cmpA" || e.target.id === "cmpB") { CMP[e.target.id === "cmpA" ? "a" : "b"] = e.target.value; return drawCompare(); }
-    var f = e.target.dataset && e.target.dataset.f; if (!f || !D) return;
+    if (e.target.id === "upIn") { upload(e.target.files); e.target.value = ""; return; }
+    var ds = e.target.dataset || {};
+    if (D && ds.pq) { e.target.value = packNow()[ds.pq]; return; }
+    if (D && ds.pf) { e.target.value = ds.pf === "ship" ? fixAud(PR.ship) : unitNum(showAud(PR[ds.pf])); return; }
+    var f = ds.f; if (!f || !D) return;
     if (f === "ship") { e.target.value = fix(D.shipUsd); return; }
     var it = itemOf(e.target); if (!it) return;
     e.target.value = f === "qty" ? it.qty : (it.price > 0 ? fix(it.price) : "");
+  });
+  // Something changed on another device while a box here was being typed in, so redraw once typing stops.
+  document.addEventListener("focusout", function () {
+    clearTimeout(rendT);
+    rendT = setTimeout(function () { if (NEEDR && !typing()) render(); }, 400);
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") return closeSheet();
@@ -875,22 +1374,22 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       else e.target.blur();
     }
   });
-  // Save anything still waiting when the page is put away or closed.
-  document.addEventListener("visibilitychange", function () { if (document.hidden) flush(); });
-  window.addEventListener("pagehide", flush);
-  // Keep two open tabs of this page in step.
-  window.addEventListener("storage", function (e) {
-    if (e.key === K.saves) { SAVES = readSaves(); return; }
-    if (e.key !== K.order && e.key !== K.rate && e.key !== K.cur) return;
-    var ae = document.activeElement;
-    if (saveT || $("mask").classList.contains("on") || (ae && ae.tagName === "INPUT" && $("body").contains(ae))) return;
-    D = cleanOrder(read(K.order)); RATE = readRate();
-    try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (err) {}
-    render();
+  // Phones pause timers in the background, so check the 8 hours and catch up whenever the page comes back.
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { clearTimeout(pollT); if (Q.length && !INF) send(true); return; }
+    if (AUTH && !signedIn()) return signOut();
+    if (signedIn()) { if (Q.length && !INF) send(); load(false); }
   });
+  window.addEventListener("pagehide", function () { if (Q.length && !INF && signedIn()) send(true); });
+  window.addEventListener("online", function () { if (signedIn()) { if (Q.length && !INF) send(); load(false); } });
   window.__log = { waMsg: function (k) { return waMsg(k); }, sums: function () { return sums(); }, saves: function () { return SAVES; },
-    order: function () { return D; }, list: function () { return P; } };
-  render();
+    order: function () { return D; }, v: function () { return V; }, pending: function () { return Q.length + (INF ? INF.length : 0); } };
+
+  if (!LIVE) {
+    document.body.classList.remove("out"); $("tools").style.visibility = "hidden";
+    note("bad", "Not connected yet", "This page needs its Google script link added.");
+  } else if (signedIn()) { document.body.classList.remove("out"); armExpiry(); load(false); if (Q.length) send(); }
+  else signOut();
 })();
 </script>
 </body>
