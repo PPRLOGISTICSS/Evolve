@@ -124,6 +124,27 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 .cta.lnk{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .cta.lnk.off{opacity:.5;pointer-events:none}
 
+/* the hidden profit view */
+h1{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.seg.tabs{margin:0 0 14px}
+.total.pf{background:var(--mint-tint);margin:0 0 16px}
+.total.pf .lbl{color:var(--mint)}
+.total.pf .rows{border-top-color:rgba(46,158,116,.18)}
+.total.pf.neg{background:var(--blush-tint)}
+.total.pf.neg .lbl{color:var(--blush)}
+.money .suf{margin:0 0 0 2px}
+.line.pl{display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-bottom:4px;color:var(--mint)}
+.line.pl small{font-size:12px;font-weight:400;color:var(--ink3)}
+.line.pl .neg{color:var(--blush)}
+.opt.ap{cursor:default}
+.opt.ap .ot{display:flex;flex-direction:column;gap:2px;min-width:0}
+.money input[data-markup]{width:58px;text-align:right}
+.opt.ap .money{flex:none}
+.opt.ap .money input{width:70px}
+.si.pc{margin:6px auto 4px}
+.code-in{-webkit-text-security:disc;letter-spacing:12px}
+.code-in::placeholder{letter-spacing:normal}
+
 /* sign in, centred and plain */
 body.out .top,body.out h1,body.out .sub{display:none}
 body.out .page{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:center}
@@ -436,6 +457,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   var AUTH = null, SRV = null, D = null, V = -1, CUR = "usd", RATE = RATE0, WA = null, SAVES = null,
     PR = { box: PACK0.box, label: PACK0.label, ship: PACK0.ship }, FILES = null, FV = -1, UPS = [], VIEWURL = "", filesBusy = false,
     Q = [], INF = null, sendErr = false, NEEDR = false, busy = false,
+    PCODE = null, PROFIT = null, PV = -1, VIEW = "order", PQ = [], PINF = null, psendT = null, PBUSY = false, TAPS = [],
     sendT = null, pollT = null, outT = null, toastT = null, rendT = null, ASK = null, CMP = { a: "cur", b: "" };
   try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (e) {}
   try { AUTH = JSON.parse(localStorage.getItem(K.auth) || "null"); } catch (e) { AUTH = null; }
@@ -490,6 +512,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     // Signing out on purpose drops anything unsaved. Running out of time keeps it to send after the next sign in.
     if (manual) { Q = []; INF = null; saveQ(); }
     AUTH = null; SRV = null; D = null; V = -1; WA = null; SAVES = null; NEEDR = false; FILES = null; FV = -1;
+    PCODE = null; PROFIT = null; PV = -1; VIEW = "order"; PQ = []; PINF = null; clearTimeout(psendT);
     clearTimeout(sendT); clearTimeout(pollT); clearTimeout(outT); closeSheet();
     try { localStorage.removeItem(K.auth); localStorage.removeItem(K.last); } catch (e) {}
     showSignIn("");
@@ -583,6 +606,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (typing()) { NEEDR = true; totals(); } else render();
     if ($("addList")) addSearch();
     if (!cached && j.fv != null && +j.fv !== FV) { FV = +j.fv; loadFiles(); }
+    if (!cached && PCODE && j.pv != null && +j.pv !== PV) { PV = +j.pv; loadProfit(); }
     return true;
   }
   function remember() { if (!SRV || !AUTH) return; try { localStorage.setItem(K.last, JSON.stringify({ exp: AUTH.exp, v: SRV.v, order: SRV.order, rate: SRV.rate, pack: SRV.pack })); } catch (e) {} }
@@ -620,6 +644,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (!signedIn() || document.hidden) return;
     pollT = setTimeout(function () {
       if (!signedIn()) return;
+      if (PQ.length && !PINF) sendP();
       if (INF) return tick();
       if (Q.length) { send(); return tick(); }
       load(false);
@@ -734,13 +759,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function render() {
     if (!D) return;
     NEEDR = false;
+    if (VIEW === "profit" && PCODE) { $("body").innerHTML = tabsHtml() + profitHtml(); profitTotals(); return; }
     var list = D.items.map(rowHtml).join("");
     if (!list) list = '<div class="empty">Nothing on the order yet. Add an item from the price list.</div>';
-    $("body").innerHTML = statusCard() + '<div id="waBox">' + waCard() + '</div>' +
-      '<div class="seg" role="group" aria-label="Currency">' +
-        '<button type="button" data-cur="usd" class="' + (CUR === "usd" ? "on" : "") + '">USD</button>' +
-        '<button type="button" data-cur="aud" class="' + (CUR === "aud" ? "on" : "") + '">AUD</button></div>' +
-      '<p class="rate">1 USD is <button type="button" class="rate-b" id="rateBtn" aria-label="Change the exchange rate, now ' + rate().toFixed(2) + '">' + rate().toFixed(2) + '</button> AUD</p>' +
+    $("body").innerHTML = tabsHtml() + statusCard() + '<div id="waBox">' + waCard() + '</div>' + curHtml() +
       '<div class="group">' + list +
         '<button type="button" class="addrow" id="addBtn">+ Add item</button>' +
         '<div class="ship"><div><span class="nm">Shipping</span><small>For the whole order</small></div>' +
@@ -787,7 +809,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         '<span class="money"><b>$</b><input data-pf="ship" inputmode="decimal" value="' + fixAud(PR.ship) + '" aria-label="Packaging shipping"></span></div></div>';
   }
   function fixAud(aud) { return (Math.round(showAud(aud) * 100) / 100).toFixed(2); }
+  function curHtml() {
+    return '<div class="seg" role="group" aria-label="Currency">' +
+        '<button type="button" data-cur="usd" class="' + (CUR === "usd" ? "on" : "") + '">USD</button>' +
+        '<button type="button" data-cur="aud" class="' + (CUR === "aud" ? "on" : "") + '">AUD</button></div>' +
+      '<p class="rate">1 USD is <button type="button" class="rate-b" id="rateBtn" aria-label="Change the exchange rate, now ' + rate().toFixed(2) + '">' + rate().toFixed(2) + '</button> AUD</p>';
+  }
   function totals() {
+    if (VIEW === "profit" && PCODE) return profitTotals();
     if (!D || !$("tBig")) return;
     var t = sums(), other = CUR === "aud" ? "usd" : "aud";
     $("tBig").textContent = money(show(t.total), CUR);
@@ -1150,6 +1179,168 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("sheet").scrollTop = y;
   }
 
+  /* ---------- the hidden profit view ----------
+     Tap the title three times and type the code. The script checks the code, so the markup and
+     sell prices only ever reach a device that knows it. Sell prices follow the markup unless one
+     is typed in by hand; those are kept in AUD by product and carry over to later orders. Profit is
+     the sales less everything the order costs: products, shipping and packaging if it's on. */
+  function numTxt(v) { return String(Math.round(v * 100) / 100); }
+  function mk() { return PROFIT && +PROFIT.markup >= 0 ? +PROFIT.markup : 100; }
+  function skey(it) { return it.k || "n:" + norm(it.name); }
+  function hasSell(k) { return !!(PROFIT && PROFIT.sell && +PROFIT.sell[k] > 0); }
+  function sellUsd(it) { var k = skey(it); return hasSell(k) ? PROFIT.sell[k] / rate() : it.price * (1 + mk() / 100); }
+  function sellUsdP(p) { return hasSell(p.k) ? PROFIT.sell[p.k] / rate() : p.each * (1 + mk() / 100); }
+  function cleanProfit(p) {
+    p = p || {}; var sell = {};
+    Object.keys(p.sell || {}).forEach(function (k) { if (+p.sell[k] > 0) sell[k] = +p.sell[k]; });
+    return { markup: +p.markup >= 0 ? +p.markup : 100, sell: sell };
+  }
+  function profitSums() {
+    var s = sums(), sales = 0;
+    D.items.forEach(function (it) { if (it.qty > 0) sales += it.qty * sellUsd(it); });
+    var profit = sales - s.total;
+    return { sales: sales, cost: s.sub, ship: s.ship, pack: s.pack, packOn: s.packOn, profit: profit, margin: sales > 0 ? profit / sales : 0, vials: s.vials };
+  }
+  function tabsHtml() {
+    if (!PCODE) return "";
+    return '<div class="seg tabs" role="tablist" aria-label="View">' +
+      '<button type="button" role="tab" data-view="order" class="' + (VIEW === "order" ? "on" : "") + '" aria-selected="' + (VIEW === "order") + '">Order</button>' +
+      '<button type="button" role="tab" data-view="profit" class="' + (VIEW === "profit" ? "on" : "") + '" aria-selected="' + (VIEW === "profit") + '">Profit</button></div>';
+  }
+  function sellTag(k) {
+    return hasSell(k) ? '<button type="button" class="pill add" data-sauto="' + esc(k) + '">Match markup</button>' : '<span class="pill">' + numTxt(mk()) + '% markup</span>';
+  }
+  function prowHtml(it) {
+    var k = skey(it);
+    return '<div class="item" data-pid="' + esc(it.id) + '">' +
+      '<div class="head"><span class="nm">' + esc(it.name) + '</span><span class="hr" data-stag="' + esc(k) + '">' + sellTag(k) + '</span></div>' +
+      '<div class="ctrls">' +
+        '<label class="fld"><span class="cap">Cost per vial</span><span class="money"><b>$</b>' +
+          '<input data-pcost="' + esc(it.id) + '" inputmode="decimal" value="' + (it.price > 0 ? fix(it.price) : "") + '" placeholder="Add" aria-label="Cost per vial of ' + esc(it.name) + '"></span></label>' +
+        '<label class="fld"><span class="cap">Sell per vial</span><span class="money"><b>$</b>' +
+          '<input data-sell="' + esc(k) + '" inputmode="decimal" value="' + fix(sellUsd(it)) + '" aria-label="Sell price per vial of ' + esc(it.name) + '"></span></label>' +
+        '<span class="line pl"><small>' + vials(it.qty) + ' profit</small><span data-pline2="1"></span></span>' +
+      '</div></div>';
+  }
+  function profitHtml() {
+    if (!PROFIT) return '<div class="skel"></div><div class="skel"></div>';
+    var rows = D.items.filter(function (it) { return it.qty > 0; }).map(prowHtml).join("");
+    return curHtml() +
+      '<div class="total pf" id="pCard" aria-live="polite"><div class="lbl">Profit</div><div class="big" id="pBig"></div><div class="alt" id="pAlt"></div>' +
+        '<div class="rows"><div class="row"><span>Sales</span><span id="pSales"></span></div>' +
+        '<div class="row"><span>Products cost</span><span id="pCost"></span></div>' +
+        '<div class="row"><span>Shipping</span><span id="pShip"></span></div>' +
+        '<div class="row" id="pPackRow"><span>Packaging</span><span id="pPack"></span></div></div></div>' +
+      '<div class="group"><div class="pk-head"><div><span class="nm">Markup</span><small>Added to the cost of every product</small></div>' +
+        '<span class="money"><input data-markup="1" inputmode="decimal" value="' + numTxt(mk()) + '" aria-label="Markup percent"><b class="suf">%</b></span></div></div>' +
+      '<div class="group pk">' + (rows || '<div class="empty">Add something to the order to see the profit.</div>') + '</div>' +
+      '<button class="tint wide" id="allPrices" type="button">See all sell prices</button>' +
+      '<button class="ghost" id="lockP" type="button">Lock profits</button>';
+  }
+  function profitTotals() {
+    if (!PROFIT || !$("pBig") || !D) return;
+    var t = profitSums(), ae = document.activeElement;
+    $("pBig").textContent = money(show(t.profit), CUR);
+    $("pCard").classList.toggle("neg", t.profit < 0);
+    $("pAlt").textContent = t.sales > 0 ? "Margin " + Math.round(t.margin * 100) + "%, selling all " + vials(t.vials) : "Nothing on the order yet";
+    $("pSales").textContent = money(show(t.sales));
+    $("pCost").textContent = money(show(t.cost));
+    $("pShip").textContent = money(show(t.ship));
+    $("pPackRow").style.display = t.packOn ? "" : "none";
+    $("pPack").textContent = money(show(t.pack));
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pid]"), function (row) {
+      var it = byId(row.dataset.pid); if (!it) return;
+      var sl = row.querySelector("[data-sell]"), ln = row.querySelector("[data-pline2]"), tg = row.querySelector("[data-stag]");
+      var lp = it.qty * (sellUsd(it) - it.price);
+      if (sl && sl !== ae) sl.value = fix(sellUsd(it));
+      if (ln) { ln.textContent = money(show(lp)); ln.className = lp < 0 ? "neg" : ""; }
+      if (tg) tg.innerHTML = sellTag(skey(it));
+    });
+    var mi = document.querySelector("[data-markup]"); if (mi && mi !== ae) mi.value = numTxt(mk());
+  }
+  function openCode() {
+    openSheet('<div class="si pc"><div class="si-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/></svg></div><h2>Profits</h2>' +
+      '<input class="si-pw code-in" id="pcode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Code" aria-label="Code">' +
+      '<p class="si-err" id="pcErr" role="alert"></p><button class="cta" id="pcGo" type="button">Open</button></div>');
+    setTimeout(function () { var i = $("pcode"); if (i) i.focus(); }, 60);
+  }
+  function tryCode() {
+    var inp = $("pcode"); if (!inp || PBUSY || !AUTH) return;
+    var code = inp.value.trim(); if (!code) return;
+    PBUSY = true; $("pcErr").textContent = "";
+    post({ action: "profit", code: code, pass: AUTH.pass }).then(function (j) {
+      if (j && j.ok) { PCODE = code; PROFIT = cleanProfit(j.profit); PV = +j.pv || 0; VIEW = "profit"; closeSheet(); render(); window.scrollTo(0, 0); return; }
+      if (j && j.error === "signed_out") return signOut();
+      if ($("pcErr")) $("pcErr").textContent = j && j.error === "locked" ? "Too many tries. Wait 10 minutes, then try again." : "That code isn't right.";
+      if ($("pcode")) $("pcode").value = "";
+    }).catch(function () { if ($("pcErr")) $("pcErr").textContent = "No connection. Check it and try again."; })
+      .then(function () { PBUSY = false; });
+  }
+  function lockProfit() {
+    if (PQ.length && !PINF) sendP();
+    PCODE = null; PROFIT = null; PV = -1; PQ = []; VIEW = "order"; clearTimeout(psendT);
+    closeSheet(); render();
+  }
+  function loadProfit() {
+    if (!PCODE || !AUTH) return;
+    var code = PCODE;
+    post({ action: "profit", code: code, pass: AUTH.pass }).then(function (j) {
+      if (PCODE !== code) return;
+      if (j && j.ok) {
+        PROFIT = cleanProfit(j.profit); (PINF || []).forEach(applyP); PQ.forEach(applyP); PV = +j.pv || 0;
+        if (VIEW === "profit") { if (typing()) { NEEDR = true; profitTotals(); } else render(); }
+        if ($("apList")) apSearch();
+      } else if (j && j.error === "signed_out") signOut();
+      else if (j && (j.error === "wrong_code" || j.error === "locked")) lockProfit();
+    }).catch(function () {});
+  }
+  function applyP(op) {
+    if (!PROFIT || !op) return;
+    if (op.t === "markup") PROFIT.markup = Math.max(0, +op.v || 0);
+    else if (op.t === "sell" && op.k) { if (op.v == null || !(+op.v > 0)) delete PROFIT.sell[op.k]; else PROFIT.sell[op.k] = +op.v; }
+  }
+  function queueP(op) {
+    applyP(op);
+    PQ = PQ.filter(function (x) { return !(x.t === op.t && x.k === op.k); }); PQ.push(op);
+    state("saving", "Saving");
+    clearTimeout(psendT); psendT = setTimeout(sendP, 600);
+  }
+  function sendP() {
+    clearTimeout(psendT);
+    if (PINF || !PQ.length || !PCODE || !signedIn()) return;
+    var batch = PQ, code = PCODE; PINF = batch; PQ = [];
+    post({ action: "psave", code: code, pass: AUTH.pass, ops: batch }).then(function (j) {
+      if (j && j.ok) {
+        PINF = null;
+        if (PCODE !== code) return;
+        PROFIT = cleanProfit(j.profit); PQ.forEach(applyP); PV = +j.pv || 0;
+        adopt(j);
+        if (PQ.length) { state("saving", "Saving"); psendT = setTimeout(sendP, 300); } else state("saved", "Saved");
+      } else if (j && j.error === "signed_out") { PINF = null; signOut(); }
+      else if (j && (j.error === "wrong_code" || j.error === "locked")) { PINF = null; lockProfit(); toast("Profits locked"); }
+      else throw new Error("not saved");
+    }).catch(function () {
+      if (PINF === batch) { PQ = batch.concat(PQ); PINF = null; }
+      if (AUTH) state("err", "Not saved, tap to retry");
+    });
+  }
+  // Every product on the price list with its sell price, for setting prices before they're on an order.
+  function openAllPrices() {
+    openSheet('<h2>All sell prices</h2><p class="sh-sub">Per vial. Clear one to go back to the markup.</p>' +
+      '<div class="srch stick"><input id="apQ" type="text" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Search the price list"></div>' +
+      '<div class="opts" id="apList"></div><div class="donebar"><button class="cta" type="button" data-x="1">Done</button></div>', "picker");
+    apSearch();
+  }
+  function apSub(p) { return [p.sku, "cost " + money(show(p.each)), hasSell(p.k) ? "set by hand" : numTxt(mk()) + "% markup"].filter(Boolean).join(", "); }
+  function apRow(p) {
+    return '<div class="opt ap"><span class="ot"><span>' + esc(p.name) + '</span><span class="om" data-apsub="' + esc(p.k) + '">' + esc(apSub(p)) + '</span></span>' +
+      '<span class="money"><b>$</b><input data-sell="' + esc(p.k) + '" inputmode="decimal" value="' + fix(sellUsdP(p)) + '" aria-label="Sell price per vial of ' + esc(p.name) + '"></span></div>';
+  }
+  function apSearch() {
+    var box = $("apList"), q = $("apQ"); if (!box || !q || !PROFIT) return;
+    box.innerHTML = addMatches(q.value.trim()).map(apRow).join("") || '<p class="empty">Nothing on the list matches.</p>';
+  }
+
   /* ---------- designs ----------
      Any file, up to 15 MB each. Pictures get a small preview made here before they go up. They're kept
      in a Drive folder on the script, so everyone signed in sees the same ones. */
@@ -1277,11 +1468,18 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (e.target.id === "mask") return closeSheet();
     var a = e.target.closest("a");
     if (a && a.id === "waGo") { setTimeout(function () { setWa(null); }, 300); return; }
+    // Three quick taps on the title opens the profit view, or asks for its code.
+    if (e.target.closest("h1") && D && signedIn()) {
+      var tnow = Date.now(); TAPS = TAPS.filter(function (t) { return tnow - t < 900; }); TAPS.push(tnow);
+      if (TAPS.length >= 3) { TAPS = []; if (PCODE) { VIEW = "profit"; render(); window.scrollTo(0, 0); } else openCode(); }
+      return;
+    }
     var b = e.target.closest("button"); if (!b) return;
     var id = b.id;
     if (id === "refresh") { if (Q.length && !INF) send(); return load(true); }
+    if (id === "pcGo") return tryCode();
     if (id === "signout") return signOut(true);
-    if (id === "state") { if (b.classList.contains("err")) { sendErr = false; send(); } return; }
+    if (id === "state") { if (b.classList.contains("err")) { sendErr = false; send(); sendP(); } return; }
     if (!D && !b.closest("#sheet")) return;
     if (id === "copy") return copy();
     if (id === "reset") return startOver("Clear the order and start again? Everything on it comes off and the status goes back to Not placed yet.", "Clear order", "Order cleared");
@@ -1305,6 +1503,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (id === "askNo") return answer(false);
     if (b.dataset.st) return setStatus(b.dataset.st);
     if (b.dataset.pk) return togglePk(b.dataset.pk, b);
+    if (b.dataset.view) { VIEW = b.dataset.view === "profit" && PCODE ? "profit" : "order"; render(); return window.scrollTo(0, 0); }
+    if (b.dataset.sauto) { queueP({ t: "sell", k: b.dataset.sauto, v: null }); return profitTotals(); }
+    if (id === "allPrices") return openAllPrices();
+    if (id === "lockP") { lockProfit(); return toast("Profits locked"); }
     if (id === "packOn") { queue({ t: "pon", v: !D.pack.on }); return render(); }
     if (b.dataset.pauto) { queue({ t: "pqty", f: b.dataset.pauto, v: null }); return totals(); }
     if (b.dataset.pact) {
@@ -1332,7 +1534,18 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   });
   document.addEventListener("input", function (e) {
     if (e.target.id === "addQ") return addSearch();
+    if (e.target.id === "apQ") return apSearch();
+    if (e.target.id === "pcode") { if (e.target.value.replace(/\D/g, "").length === 4) tryCode(); return; }
     var ds = e.target.dataset || {};
+    if (D && PROFIT && ds.markup) { queueP({ t: "markup", v: Math.max(0, num(e.target.value)) }); return profitTotals(); }
+    if (D && PROFIT && ds.sell) {
+      var raw = e.target.value.trim();
+      queueP({ t: "sell", k: ds.sell, v: raw === "" ? null : r4(toAud(num(raw))) });
+      var sub = document.querySelector('[data-apsub="' + ds.sell + '"]'), pp = PK[ds.sell];
+      if (sub && pp) sub.textContent = apSub(pp);
+      return profitTotals();
+    }
+    if (D && ds.pcost) { var pit = byId(ds.pcost); if (pit) queue({ t: "price", id: pit.id, k: pit.k, v: r4(toUsd(num(e.target.value))) }); return profitTotals(); }
     if (D && ds.pq) { queue({ t: "pqty", f: ds.pq, v: e.target.value.trim() === "" ? null : Math.round(num(e.target.value)) }); return totals(); }
     if (D && ds.pf) { queue({ t: "pprice", f: ds.pf, v: r4(toAud(num(e.target.value))) }); return totals(); }
     var f = ds.f; if (!f || !D) return;
@@ -1348,6 +1561,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (e.target.id === "cmpA" || e.target.id === "cmpB") { CMP[e.target.id === "cmpA" ? "a" : "b"] = e.target.value; return drawCompare(); }
     if (e.target.id === "upIn") { upload(e.target.files); e.target.value = ""; return; }
     var ds = e.target.dataset || {};
+    if (D && PROFIT && ds.markup) { e.target.value = numTxt(mk()); return; }
+    if (D && PROFIT && ds.sell) {
+      var cit = null; D.items.forEach(function (x) { if (skey(x) === ds.sell) cit = x; });
+      var cp = PK[ds.sell];
+      e.target.value = fix(cit ? sellUsd(cit) : cp ? sellUsdP(cp) : 0);
+      return;
+    }
+    if (D && ds.pcost) { var cpi = byId(ds.pcost); if (cpi) e.target.value = cpi.price > 0 ? fix(cpi.price) : ""; return; }
     if (D && ds.pq) { e.target.value = packNow()[ds.pq]; return; }
     if (D && ds.pf) { e.target.value = ds.pf === "ship" ? fixAud(PR.ship) : unitNum(showAud(PR[ds.pf])); return; }
     var f = ds.f; if (!f || !D) return;
@@ -1364,6 +1585,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (e.key === "Escape") return closeSheet();
     if (e.key === "Enter" && e.target.id === "svName") { e.preventDefault(); return doSaveFor(); }
     if (e.key === "Enter" && e.target.id === "rateIn") { e.preventDefault(); return saveRate(); }
+    if (e.key === "Enter" && e.target.id === "pcode") { e.preventDefault(); return tryCode(); }
     if (e.key === "Enter" && e.target.id === "addQ") {
       e.preventDefault();
       var q = e.target.value.trim(), m = addMatches(q);
@@ -1383,7 +1605,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   window.addEventListener("pagehide", function () { if (Q.length && !INF && signedIn()) send(true); });
   window.addEventListener("online", function () { if (signedIn()) { if (Q.length && !INF) send(); load(false); } });
   window.__log = { waMsg: function (k) { return waMsg(k); }, sums: function () { return sums(); }, saves: function () { return SAVES; },
-    order: function () { return D; }, v: function () { return V; }, pending: function () { return Q.length + (INF ? INF.length : 0); } };
+    order: function () { return D; }, v: function () { return V; }, pending: function () { return Q.length + (INF ? INF.length : 0) + PQ.length + (PINF ? PINF.length : 0); },
+    profit: function () { return PROFIT ? profitSums() : null; }, unlocked: function () { return !!PCODE; } };
 
   if (!LIVE) {
     document.body.classList.remove("out"); $("tools").style.visibility = "hidden";
