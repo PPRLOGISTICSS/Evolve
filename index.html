@@ -124,6 +124,18 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 .cta.lnk{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .cta.lnk.off{opacity:.5;pointer-events:none}
 
+/* USD and AUD switch on the totals */
+.tot-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mini{flex:none;display:inline-flex;background:rgba(75,63,184,.10);border-radius:10px;padding:2px}
+.mini button{border:0;background:transparent;border-radius:8px;min-height:32px;padding:0 12px;font-size:13px;font-weight:600;color:var(--lav-ink);cursor:pointer}
+.mini button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(29,29,31,.12)}
+.total.pf .mini{background:rgba(46,158,116,.13)}
+.total.pf .mini button{color:var(--mint)}
+.total.pf.neg .mini{background:rgba(201,80,77,.12)}
+.total.pf.neg .mini button{color:var(--blush)}
+.total.pf .mini button.on{color:var(--ink)}
+.rate.under{margin:-8px 4px 16px}
+
 /* the hidden profit view */
 h1{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .seg.tabs{margin:0 0 14px}
@@ -768,7 +780,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         '<div class="ship"><div><span class="nm">Shipping</span><small>For the whole order</small></div>' +
           '<span class="money"><b>$</b><input data-f="ship" inputmode="decimal" value="' + fix(D.shipUsd) + '" aria-label="Shipping"></span></div>' +
       '</div>' + packHtml() +
-      '<div class="total" aria-live="polite"><div class="lbl">Total</div><div class="big" id="tBig"></div><div class="alt" id="tAlt"></div>' +
+      '<div class="total" aria-live="polite"><div class="tot-h"><div class="lbl">Total</div>' + miniCur() + '</div><div class="big" id="tBig"></div><div class="alt" id="tAlt"></div>' +
         '<div class="rows"><div class="row"><span>Products</span><span id="tSub"></span></div>' +
         '<div class="row"><span>Shipping</span><span id="tShip"></span></div>' +
         '<div class="row" id="tPackRow"><span>Packaging</span><span id="tPack"></span></div>' +
@@ -779,6 +791,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       '<button class="ghost" id="reset" type="button">Clear order</button>' +
       '<div id="dzBox">' + filesHtml() + '</div>';
     totals();
+  }
+  function packTotals() {
+    var p = packNow(), ae = document.activeElement;
+    ["boxes", "labels"].forEach(function (f) {
+      var auto = D.pack[f] == null, inp = document.querySelector('[data-pq="' + f + '"]'), ln = document.querySelector('[data-pline="' + f + '"]'), tg = document.querySelector('[data-ptag="' + f + '"]');
+      if (inp && inp !== ae) inp.value = p[f];
+      if (ln) ln.textContent = money(showAud(f === "boxes" ? p.boxAud : p.labelAud));
+      if (tg) tg.innerHTML = packTag(f, f === "boxes" ? "1 per box" : "1 per vial", auto);
+    });
   }
   function packRow(f, name, rule, pf, unit, qty, line) {
     var auto = D.pack[f] == null, step = f === "labels" ? 10 : 1;
@@ -812,8 +833,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function curHtml() {
     return '<div class="seg" role="group" aria-label="Currency">' +
         '<button type="button" data-cur="usd" class="' + (CUR === "usd" ? "on" : "") + '">USD</button>' +
-        '<button type="button" data-cur="aud" class="' + (CUR === "aud" ? "on" : "") + '">AUD</button></div>' +
-      '<p class="rate">1 USD is <button type="button" class="rate-b" id="rateBtn" aria-label="Change the exchange rate, now ' + rate().toFixed(2) + '">' + rate().toFixed(2) + '</button> AUD</p>';
+        '<button type="button" data-cur="aud" class="' + (CUR === "aud" ? "on" : "") + '">AUD</button></div>' + rateHtml("");
+  }
+  function rateHtml(cls) {
+    return '<p class="rate' + (cls ? " " + cls : "") + '">1 USD is <button type="button" class="rate-b" id="rateBtn" aria-label="Change the exchange rate, now ' + rate().toFixed(2) + '">' + rate().toFixed(2) + '</button> AUD</p>';
+  }
+  function miniCur() {
+    return '<div class="mini" role="group" aria-label="Currency">' +
+      '<button type="button" data-cur="usd" class="' + (CUR === "usd" ? "on" : "") + '">USD</button>' +
+      '<button type="button" data-cur="aud" class="' + (CUR === "aud" ? "on" : "") + '">AUD</button></div>';
   }
   function totals() {
     if (VIEW === "profit" && PCODE) return profitTotals();
@@ -826,13 +854,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("tPackRow").style.display = t.packOn ? "" : "none";
     $("tPack").textContent = money(show(t.pack));
     $("tCount").textContent = t.prods + (t.prods === 1 ? " product, " : " products, ") + t.vials + " vials";
-    var p = packNow(), ae = document.activeElement;
-    ["boxes", "labels"].forEach(function (f) {
-      var auto = D.pack[f] == null, inp = document.querySelector('[data-pq="' + f + '"]'), ln = document.querySelector('[data-pline="' + f + '"]'), tg = document.querySelector('[data-ptag="' + f + '"]');
-      if (inp && inp !== ae) inp.value = p[f];
-      if (ln) ln.textContent = money(showAud(f === "boxes" ? p.boxAud : p.labelAud));
-      if (tg) tg.innerHTML = packTag(f, f === "boxes" ? "1 per box" : "1 per vial", auto);
-    });
+    packTotals();
     Array.prototype.forEach.call(document.querySelectorAll(".item"), function (row) {
       var it = itemOf(row), el = row.querySelector("[data-line]");
       if (it && el) el.textContent = money(show(it.qty * it.price));
@@ -1219,30 +1241,36 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
           '<input data-pcost="' + esc(it.id) + '" inputmode="decimal" value="' + (it.price > 0 ? fix(it.price) : "") + '" placeholder="Add" aria-label="Cost per vial of ' + esc(it.name) + '"></span></label>' +
         '<label class="fld"><span class="cap">Sell per vial</span><span class="money"><b>$</b>' +
           '<input data-sell="' + esc(k) + '" inputmode="decimal" value="' + fix(sellUsd(it)) + '" aria-label="Sell price per vial of ' + esc(it.name) + '"></span></label>' +
-        '<span class="line pl"><small>' + vials(it.qty) + ' profit</small><span data-pline2="1"></span></span>' +
+        '<span class="line pl"><small data-pcap2="1">' + vials(it.qty) + ' profit</small><span data-pline2="1"></span></span>' +
       '</div></div>';
   }
   function profitHtml() {
     if (!PROFIT) return '<div class="skel"></div><div class="skel"></div>';
     var rows = D.items.filter(function (it) { return it.qty > 0; }).map(prowHtml).join("");
-    return curHtml() +
-      '<div class="total pf" id="pCard" aria-live="polite"><div class="lbl">Profit</div><div class="big" id="pBig"></div><div class="alt" id="pAlt"></div>' +
+    return '<div class="total pf" id="pCard" aria-live="polite"><div class="tot-h"><div class="lbl" id="pLbl">Profit</div>' + miniCur() + '</div><div class="big" id="pBig"></div><div class="alt" id="pAlt"></div>' +
         '<div class="rows"><div class="row"><span>Sales</span><span id="pSales"></span></div>' +
         '<div class="row"><span>Products cost</span><span id="pCost"></span></div>' +
         '<div class="row"><span>Shipping</span><span id="pShip"></span></div>' +
-        '<div class="row" id="pPackRow"><span>Packaging</span><span id="pPack"></span></div></div></div>' +
+        '<div class="row" id="pPackRow"><span>Packaging</span><span id="pPack"></span></div></div></div>' + rateHtml("under") +
       '<div class="group"><div class="pk-head"><div><span class="nm">Markup</span><small>Added to the cost of every product</small></div>' +
         '<span class="money"><input data-markup="1" inputmode="decimal" value="' + numTxt(mk()) + '" aria-label="Markup percent"><b class="suf">%</b></span></div></div>' +
-      '<div class="group pk">' + (rows || '<div class="empty">Add something to the order to see the profit.</div>') + '</div>' +
+      '<div class="group pk">' + (rows || '<div class="empty">Add something to the order to see the profit.</div>') +
+        '<div class="ship"><div><span class="nm">Shipping</span><small>For the whole order</small></div>' +
+          '<span class="money"><b>$</b><input data-f="ship" inputmode="decimal" value="' + fix(D.shipUsd) + '" aria-label="Shipping"></span></div></div>' +
+      packHtml() +
       '<button class="tint wide" id="allPrices" type="button">See all sell prices</button>' +
       '<button class="ghost" id="lockP" type="button">Lock profits</button>';
   }
   function profitTotals() {
     if (!PROFIT || !$("pBig") || !D) return;
     var t = profitSums(), ae = document.activeElement;
-    $("pBig").textContent = money(show(t.profit), CUR);
-    $("pCard").classList.toggle("neg", t.profit < 0);
-    $("pAlt").textContent = t.sales > 0 ? "Margin " + Math.round(t.margin * 100) + "%, selling all " + vials(t.vials) : "Nothing on the order yet";
+    // A loss reads as Loss and the amount, never a minus sign.
+    var loss = t.profit < -0.005;
+    $("pLbl").textContent = loss ? "Loss" : "Profit";
+    $("pBig").textContent = money(show(Math.abs(t.profit)), CUR);
+    $("pCard").classList.toggle("neg", loss);
+    $("pAlt").textContent = !(t.sales > 0) ? "Nothing on the order yet" :
+      (loss ? "Losing " + Math.round(-t.margin * 100) + "%" : "Margin " + Math.round(t.margin * 100) + "%") + ", selling all " + vials(t.vials);
     $("pSales").textContent = money(show(t.sales));
     $("pCost").textContent = money(show(t.cost));
     $("pShip").textContent = money(show(t.ship));
@@ -1250,13 +1278,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("pPack").textContent = money(show(t.pack));
     Array.prototype.forEach.call(document.querySelectorAll("[data-pid]"), function (row) {
       var it = byId(row.dataset.pid); if (!it) return;
-      var sl = row.querySelector("[data-sell]"), ln = row.querySelector("[data-pline2]"), tg = row.querySelector("[data-stag]");
-      var lp = it.qty * (sellUsd(it) - it.price);
+      var sl = row.querySelector("[data-sell]"), ln = row.querySelector("[data-pline2]"), tg = row.querySelector("[data-stag]"), cp = row.querySelector("[data-pcap2]");
+      var lp = it.qty * (sellUsd(it) - it.price), lose = lp < -0.005;
       if (sl && sl !== ae) sl.value = fix(sellUsd(it));
-      if (ln) { ln.textContent = money(show(lp)); ln.className = lp < 0 ? "neg" : ""; }
+      if (ln) { ln.textContent = money(show(Math.abs(lp))); ln.className = lose ? "neg" : ""; }
+      if (cp) cp.textContent = vials(it.qty) + (lose ? " loss" : " profit");
       if (tg) tg.innerHTML = sellTag(skey(it));
     });
     var mi = document.querySelector("[data-markup]"); if (mi && mi !== ae) mi.value = numTxt(mk());
+    packTotals();
   }
   function openCode() {
     openSheet('<div class="si pc"><div class="si-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/></svg></div><h2>Profits</h2>' +
@@ -1271,7 +1301,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     post({ action: "profit", code: code, pass: AUTH.pass }).then(function (j) {
       if (j && j.ok) { PCODE = code; PROFIT = cleanProfit(j.profit); PV = +j.pv || 0; VIEW = "profit"; closeSheet(); render(); window.scrollTo(0, 0); return; }
       if (j && j.error === "signed_out") return signOut();
-      if ($("pcErr")) $("pcErr").textContent = j && j.error === "locked" ? "Too many tries. Wait 10 minutes, then try again." : "That code isn't right.";
+      if ($("pcErr")) $("pcErr").textContent = j && j.error === "locked" ? "Too many tries. Wait 10 minutes, then try again." :
+        j && j.error === "bad_action" ? "The Google script needs updating first." : "That code isn't right.";
       if ($("pcode")) $("pcode").value = "";
     }).catch(function () { if ($("pcErr")) $("pcErr").textContent = "No connection. Check it and try again."; })
       .then(function () { PBUSY = false; });
