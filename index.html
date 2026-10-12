@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f4f5fa">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>PPR Order</title>
+<style>
+:root{
+  --canvas:#f4f5fa; --card:#fff; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#a1a1a8; --line:rgba(60,60,67,.11);
+  --peri:#5d6cf0; --peri-tint:#eceefe; --field:#f1f2f8;
+  --mint:#2e9e74; --mint-tint:#e4f5ee;
+  --apricot:#c7772a; --apricot-tint:#fdf0e1;
+  --blush:#c9504d; --blush-tint:#fce9e8;
+  --lav:#efebfd; --lav-ink:#4b3fb8;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--canvas);color:var(--ink);
+  font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+button,input{font:inherit;color:inherit}
+.page{max-width:600px;margin:0 auto;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:38px}
+.state{font-size:13px;font-weight:600;border-radius:999px;padding:5px 11px;border:0;background:transparent;color:var(--ink3)}
+.state.saved{background:var(--mint-tint);color:var(--mint)}
+.state.saving{background:var(--peri-tint);color:var(--peri)}
+.state.err{background:var(--blush-tint);color:var(--blush);cursor:pointer}
+h1{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  font-size:34px;line-height:1.08;font-weight:700;letter-spacing:.3px;margin:10px 0 4px}
+.sub{color:var(--ink2);font-size:15px;margin:0 0 16px}
+
+/* currency switch */
+.seg{display:flex;background:#e6e8f1;border-radius:11px;padding:2px;margin:0 0 6px}
+.seg button{flex:1;border:0;background:transparent;border-radius:9px;min-height:36px;font-size:15px;font-weight:600;color:var(--ink2);cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(29,29,31,.12)}
+.rate{font-size:13px;color:var(--ink3);margin:0 4px 18px}
+.rate-b{border:0;background:transparent;padding:0;font:inherit;font-weight:600;color:var(--peri);cursor:pointer;font-variant-numeric:tabular-nums}
+
+/* order list, Apple inset grouped style */
+.group{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 2px rgba(29,29,31,.04)}
+.item{padding:14px 16px;position:relative}
+.item + .item::before,.ship::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nm{font-weight:600;font-size:17px}
+.pill{flex:none;font-size:13px;font-weight:600;border-radius:999px;padding:3px 10px;background:var(--field);color:var(--ink2)}
+.ctrls{display:flex;align-items:flex-end;gap:10px;margin-top:10px;flex-wrap:wrap}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld .cap{font-size:12px;color:var(--ink3);padding-left:2px}
+.step,.money{color:var(--ink)}
+.step{display:flex;align-items:center;background:var(--field);border-radius:11px;height:40px}
+.step button{width:38px;height:40px;border:0;background:transparent;color:var(--peri);font-size:22px;line-height:1;cursor:pointer;border-radius:11px}
+.step button:active{background:var(--peri-tint)}
+.step input{width:48px;height:40px;border:0;background:transparent;text-align:center;font-weight:600;font-variant-numeric:tabular-nums;font-size:17px}
+.money{display:flex;align-items:center;background:var(--field);border-radius:11px;height:40px;padding:0 10px}
+.money b{color:var(--ink3);font-weight:500;margin-right:2px}
+.money input{width:74px;height:40px;border:0;background:transparent;font-variant-numeric:tabular-nums;font-size:17px}
+.money input::placeholder{color:var(--peri);opacity:.8}
+.line{margin-left:auto;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:17px;padding-bottom:9px}
+input:focus{outline:none}
+.step:focus-within,.money:focus-within{box-shadow:0 0 0 2px var(--peri)}
+.ship{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;position:relative}
+.ship .nm{font-weight:500}
+.ship small{display:block;font-size:13px;color:var(--ink3)}
+
+/* total, the one standout piece */
+.total{background:var(--lav);border-radius:var(--r);padding:18px 18px 16px;margin-top:16px}
+.total .lbl{font-size:15px;color:var(--lav-ink);font-weight:600}
+.total .big{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  font-size:40px;font-weight:700;letter-spacing:.2px;font-variant-numeric:tabular-nums;line-height:1.1;margin:2px 0 4px;color:var(--ink)}
+.total .alt{font-size:15px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.total .rows{margin-top:12px;border-top:.5px solid rgba(75,63,184,.15);padding-top:10px}
+.total .row{display:flex;justify-content:space-between;font-size:15px;color:var(--ink2);padding:2px 0;font-variant-numeric:tabular-nums}
+
+.cta{display:block;width:100%;height:52px;margin-top:16px;border:0;border-radius:14px;background:var(--peri);color:#fff;font-size:17px;font-weight:600;cursor:pointer}
+.cta:active{opacity:.88}
+.cta:disabled{opacity:.6}
+.ghost{display:block;margin:12px auto 0;border:0;background:transparent;color:var(--peri);font-size:15px;font-weight:500;cursor:pointer;padding:8px 12px}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  background:rgba(29,29,31,.9);color:#fff;padding:10px 16px;border-radius:999px;font-size:15px;
+  opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:30}
+.toast.on{opacity:1}
+.mask.on ~ .toast{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+:focus-visible{outline:2px solid var(--peri);outline-offset:2px}
+/* status */
+.stat{background:var(--card);border-radius:var(--r);padding:16px;margin:0 0 14px;box-shadow:0 1px 2px rgba(29,29,31,.04)}
+.stat-lbl{font-size:13px;color:var(--ink3)}
+.stat-now{font-size:22px;font-weight:700;margin-top:2px}
+.stat-when{font-size:13px;color:var(--ink2);margin-top:2px}
+.prog{display:flex;gap:4px;margin:12px 0 2px}
+.prog span{flex:1;height:6px;border-radius:3px;background:#e6e8f1}
+.prog span.on{background:#7fd1ae}
+.stat-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tint{border:0;background:var(--peri-tint);color:var(--peri);font-weight:600;font-size:15px;border-radius:12px;min-height:40px;padding:0 16px;cursor:pointer}
+.cta.mint{background:#1f8a5f;margin-top:14px}
+/* whatsapp nudge */
+.wa{background:#e2f5ea;border-radius:var(--r);padding:14px 16px;margin:0 0 14px;color:#1d5c3f}
+.wa p{margin:0 0 10px;font-size:15px;font-weight:600}
+.wa-row{display:flex;gap:10px;align-items:center}
+.wa-btn{flex:1;display:flex;align-items:center;justify-content:center;height:44px;border-radius:12px;background:#1f8a5f;color:#fff;font-weight:600;text-decoration:none}
+.wa-x{border:0;background:transparent;color:#1d5c3f;font-size:15px;cursor:pointer;padding:8px}
+/* add and remove */
+.hr{display:flex;align-items:center;gap:8px;flex:none}
+.x{width:28px;height:28px;border-radius:50%;border:0;background:var(--field);color:var(--ink3);font-size:18px;line-height:1;cursor:pointer}
+.pill.add{background:var(--peri-tint);color:var(--peri)}
+.addrow{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--peri);font-size:17px;font-weight:500;padding:14px 16px;cursor:pointer;position:relative}
+.addrow::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.empty{padding:16px;color:var(--ink2);font-size:15px}
+/* sheets */
+.mask{position:fixed;inset:0;background:rgba(29,29,31,.28);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.mask.on{display:flex}
+.sheet{position:relative;background:var(--canvas);width:100%;max-width:600px;max-height:86vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.mask{align-items:center}.sheet{border-radius:20px}.mask.on ~ .toast{bottom:calc(7vh + 96px)}}
+.sheet h2{font-size:22px;margin:4px 0 4px}
+.sh-sub{color:var(--ink2);font-size:15px;margin:0 0 12px}
+.sheet-x{position:absolute;right:14px;top:14px;width:32px;height:32px;border-radius:50%;border:0;background:#e6e8f1;color:var(--ink2);font-size:20px;cursor:pointer}
+.opts{background:var(--card);border-radius:var(--r);overflow:hidden}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:13px 16px;font-size:17px;cursor:pointer;position:relative}
+.opt + .opt::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.opt .ck{width:18px;flex:none;color:var(--mint);font-weight:700}
+.opt .ot{flex:1}
+.opt .om{font-size:13px;color:var(--ink3)}
+.opt.cur .ot{font-weight:700}
+.opt.new .ot{color:var(--peri)}
+.srch{margin:10px 0 12px}
+.sheet h2.ask{font-size:20px;line-height:1.3;margin:6px 44px 4px 0}
+.srch input{width:100%;height:44px;border:0;border-radius:12px;background:#e6e8f1;padding:0 14px;font-size:17px}
+/* picking from the price list */
+.sheet.picker{padding-bottom:0}
+.srch.stick{position:sticky;top:-18px;z-index:2;background:var(--canvas);margin:0 -16px 2px;padding:12px 16px 10px}
+.opt.pl .ck{width:22px;height:22px;border-radius:50%;border:1.5px solid #c7c7cc;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;color:#fff}
+.opt.pl.on .ck{background:var(--mint);border-color:var(--mint)}
+.opt.pl .ot{display:flex;flex-direction:column;gap:2px;min-width:0}
+.opt.pl .om{line-height:1.3}
+.opt.pl .pr{flex:none;font-size:15px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.opt.pl.on .ot > span:first-child{font-weight:600}
+.donebar{position:sticky;bottom:0;z-index:2;margin:0 -16px;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(to bottom,rgba(244,245,250,0),var(--canvas) 16px)}
+.donebar .cta{margin-top:0}
+
+.si-row{display:flex;align-items:center;gap:12px;padding:0 16px;min-height:52px}
+.si-row .cap{font-size:17px;flex:none}
+.si-row + .si-row{border-top:.5px solid var(--line)}
+.si-row input{flex:1;min-width:0;border:0;background:transparent;height:52px;font-size:17px;text-align:right}
+.si-row input::placeholder{color:var(--ink3)}
+/* save for later, saved orders, compare */
+.acts3{display:flex;gap:8px;margin-top:14px}
+.acts3 .tint{flex:1;min-width:0;padding:0 6px;font-size:15px;min-height:44px}
+.tint.wide{display:block;width:100%;margin-top:10px;min-height:50px;font-size:17px}
+.ghost.danger{color:var(--blush)}
+.opt.sv .ot{display:flex;flex-direction:column;gap:2px;min-width:0}
+.opt.sv .ot b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv-t{font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+.sv-line{display:flex;align-items:baseline;gap:10px;padding:12px 16px;position:relative}
+.sv-line + .sv-line::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.sv-line .nm{flex:1;min-width:0;font-size:16px}
+.sv-q{color:var(--ink2);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sv-v{font-weight:600;font-variant-numeric:tabular-nums;min-width:82px;text-align:right;white-space:nowrap}
+.pick{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:0 12px;margin:0 0 8px;min-height:48px;position:relative}
+.pick::after{content:"";position:absolute;right:16px;top:50%;width:7px;height:7px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.ab{flex:none;width:24px;height:24px;border-radius:50%;background:var(--peri-tint);color:var(--peri);font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+.pick select{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;height:46px;color:var(--ink);-webkit-appearance:none;appearance:none;padding-right:26px;cursor:pointer}
+.cmp{margin-top:12px}
+.cmp-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px 0}
+.cmp-row{padding:12px 16px;position:relative}
+.cmp-row + .cmp-row::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.cmp-nm{font-weight:600;font-size:16px;margin-bottom:6px}
+.cmp-cells{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp-c{background:var(--field);border-radius:10px;padding:8px 10px;min-width:0}
+.cmp-c.win{background:var(--mint-tint)}
+.cmp-c .q{display:block;font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-c .v{display:block;font-weight:600;font-variant-numeric:tabular-nums}
+.cmp-c.none .v{color:var(--ink3);font-weight:500;font-size:15px}
+.cmp-d{font-size:13px;color:var(--ink2);margin-top:6px}
+.cmp-d.good{color:var(--mint);font-weight:600}
+.cmp-tot .cmp-tr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:15px;color:var(--ink2);padding:3px 0;font-variant-numeric:tabular-nums}
+.cmp-tot .cmp-tr span + span{text-align:right}
+.cmp-tot .cmp-tr.th span{font-weight:700;color:var(--lav-ink)}
+.cmp-tot .cmp-tr.tot{color:var(--ink);font-weight:700;font-size:17px;border-top:.5px solid rgba(75,63,184,.15);margin-top:6px;padding-top:8px}
+.cmp-v{font-size:21px;font-weight:700;margin-top:12px;color:var(--ink)}
+.cmp-note{font-size:14px;color:var(--ink2);margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="top">
+    <button class="state" id="state" type="button" aria-live="polite"></button>
+  </div>
+  <h1>PPR Logistics</h1>
+  <p class="sub" id="sub">Order from the 12 May 2026 price list</p>
+  <div id="body"></div>
+</main>
+<div class="mask" id="mask"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Order options"></div></div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+// Never run inside another site's page.
+if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ""; } }
+
+/* PPR Logistics order. Doesn't pull from anything: the price list is in this file, you pick
+   from it, set the amounts and it adds it all up. Money is kept in USD and shown in USD or AUD
+   at the rate set on the page. The order, saved orders and the rate stay on this device. */
+(function () {
+  var RATE0 = 1.43;
+  // The 12 May 2026 price list: part number, name, more detail, USD for the box, vials in the box, other words to find it by.
+  var LIST = [
+    ["SM5", "Semaglutide 5mg", "", 45, 10],
+    ["SM10", "Semaglutide 10mg", "", 70, 10],
+    ["SM15", "Semaglutide 15mg", "", 90, 10],
+    ["SM20", "Semaglutide 20mg", "", 110, 10],
+    ["SM30", "Semaglutide 30mg", "", 140, 10],
+    ["TR5", "Tirzepatide 5mg", "", 45, 10],
+    ["TR10", "Tirzepatide 10mg", "", 70, 10],
+    ["TR15", "Tirzepatide 15mg", "", 90, 10],
+    ["TR20", "Tirzepatide 20mg", "", 110, 10],
+    ["TR30", "Tirzepatide 30mg", "", 140, 10],
+    ["TR40", "Tirzepatide 40mg", "", 180, 10],
+    ["TR50", "Tirzepatide 50mg", "", 220, 10],
+    ["TR60", "Tirzepatide 60mg", "", 250, 10],
+    ["RT5", "Retatrutide 5mg", "", 80, 10],
+    ["RT10", "Retatrutide 10mg", "", 120, 10],
+    ["RT15", "Retatrutide 15mg", "", 150, 10],
+    ["RT20", "Retatrutide 20mg", "", 180, 10],
+    ["RT30", "Retatrutide 30mg", "", 200, 10],
+    ["RT60", "Retatrutide 60mg", "", 350, 10],
+    ["H10", "HGH 10IU", "", 60, 10],
+    ["H15", "HGH 15IU", "", 90, 10],
+    ["H24", "HGH 24IU", "", 120, 10],
+    ["H36", "HGH 36IU", "", 180, 10],
+    ["BPC5", "BPC 157 5mg", "", 50, 10],
+    ["BPC10", "BPC 157 10mg", "", 70, 10],
+    ["TB5", "TB500 5mg", "", 75, 10],
+    ["TB10", "TB500 10mg", "", 135, 10],
+    ["BB10", "BPC 5mg + TB 5mg", "", 100, 10, "bpc157 tb500"],
+    ["BB20", "BPC 10mg + TB 10mg", "", 170, 10, "bpc157 tb500"],
+    ["2S5", "SS-31 5mg", "", 50, 10],
+    ["2S10", "SS-31 10mg", "", 80, 10],
+    ["2S50", "SS-31 50mg", "", 330, 10],
+    ["SL332", "SLU-PP-332 5mg", "", 90, 10],
+    ["CND5", "CJC-1295 no DAC 5mg", "", 90, 10],
+    ["CND10", "CJC-1295 no DAC 10mg", "", 170, 10],
+    ["CP10", "CJC-1295 no DAC 5mg + IPA 5mg", "", 90, 10, "ipamorelin"],
+    ["CD2", "CJC-1295 with DAC 2mg", "", 80, 10],
+    ["CD5", "CJC-1295 with DAC 5mg", "", 145, 10],
+    ["AOD5", "AOD9604 5mg", "", 80, 10, "5AD"],
+    ["AOD10", "AOD9604 10mg", "", 150, 10, "10AD"],
+    ["IGF-01", "IGF-1 LR3 0.1mg", "", 50, 10],
+    ["IGF-1", "IGF-1 LR3 1mg", "", 170, 10],
+    ["MS5", "MOTS-c 5mg", "", 50, 10],
+    ["MS10", "MOTS-c 10mg", "", 80, 10],
+    ["MS40", "MOTS-c 40mg", "", 180, 10],
+    ["MT1", "MT-1 10mg", "", 45, 10, "melanotan"],
+    ["MT2", "MT-2 10mg", "Melanotan 2 Acetate", 45, 10],
+    ["ET10", "Epithalon 10mg", "", 50, 10],
+    ["ET50", "Epithalon 50mg", "", 160, 10],
+    ["G25", "GHRP-2 Acetate 5mg", "", 35, 10],
+    ["G210", "GHRP-2 Acetate 10mg", "", 55, 10],
+    ["G65", "GHRP-6 Acetate 5mg", "", 35, 10],
+    ["G610", "GHRP-6 Acetate 10mg", "", 55, 10],
+    ["PT41", "PT-141 10mg", "", 55, 10],
+    ["SK5", "Selank 5mg", "", 40, 10],
+    ["SK10", "Selank 10mg", "", 70, 10],
+    ["XA5", "Semax 5mg", "", 40, 10],
+    ["XA10", "Semax 10mg", "", 70, 10],
+    ["TSM5", "Tesamorelin 5mg", "", 100, 10],
+    ["TSM10", "Tesamorelin 10mg", "", 180, 10],
+    ["SMO5", "Sermorelin Acetate 5mg", "", 70, 10],
+    ["SMO10", "Sermorelin Acetate 10mg", "", 130, 10],
+    ["TA5", "Thymosin Alpha-1 5mg", "", 90, 10],
+    ["TA10", "Thymosin Alpha-1 10mg", "", 160, 10],
+    ["IP5", "Ipamorelin 5mg", "", 50, 10],
+    ["IP10", "Ipamorelin 10mg", "", 80, 10],
+    ["MAZ5", "Mazdutide 5mg", "", 100, 10],
+    ["MAZ10", "Mazdutide 10mg", "", 180, 10],
+    ["CGL5", "Cagrilintide 5mg", "", 100, 10],
+    ["CGL10", "Cagrilintide 10mg", "", 180, 10],
+    ["SUR2", "Survodutide 2mg", "", 100, 10],
+    ["SUR5", "Survodutide 5mg", "", 180, 10],
+    ["SUR10", "Survodutide 10mg", "", 320, 10],
+    ["NJ500", "NAD+ 500mg", "", 50, 10],
+    ["NJ1000", "NAD+ 1000mg", "", 70, 10],
+    ["CU50", "GHK-Cu 50mg", "", 45, 10],
+    ["CU100", "GHK-Cu 100mg", "", 60, 10],
+    ["GLOW70", "GLOW 70mg", "BPC 157 10mg + GHK-Cu 50mg + TB500 10mg", 200, 10],
+    ["KLOW80", "KLOW 80mg", "BPC 157 10mg + GHK-Cu 50mg + TB500 10mg + KPV 10mg", 220, 10],
+    ["KP5", "KPV 5mg", "", 40, 10],
+    ["KP10", "KPV 10mg", "", 55, 10],
+    ["VP5", "VIP 5mg", "", 80, 10],
+    ["VP10", "VIP 10mg", "", 150, 10],
+    ["KS5", "Kisspeptin-10 5mg", "", 45, 10],
+    ["KS10", "Kisspeptin-10 10mg", "", 70, 10],
+    ["DS5", "DSIP 5mg", "", 45, 10],
+    ["DS10", "DSIP 10mg", "", 70, 10],
+    ["OT5", "Oxytocin Acetate 5mg", "", 50, 10],
+    ["OT10", "Oxytocin Acetate 10mg", "", 70, 10],
+    ["HX2", "Hexarelin Acetate 2mg", "", 50, 10],
+    ["HX5", "Hexarelin Acetate 5mg", "", 80, 10],
+    ["AP2", "Adipotide 2mg", "", 80, 10],
+    ["AP5", "Adipotide 5mg", "", 170, 10],
+    ["FMP2", "PEG MGF 2mg", "", 90, 10],
+    ["G10K", "HCG 10000IU", "", 140, 10],
+    ["G5K", "HCG 5000IU", "", 80, 10],
+    ["G2K", "HCG 2000IU", "", 50, 10],
+    ["IGD", "IGF-DES 2mg", "", 50, 10],
+    ["LL375", "LL37 5mg", "", 90, 10],
+    ["LC600", "L Carnitine 600mg", "", 50, 10],
+    ["LC1200", "L Carnitine 1200mg", "", 70, 10],
+    ["LC216", "LC216 216mg", "Red", 70, 10, "carnitine"],
+    ["LC526", "LC526 526mg", "", 70, 10, "carnitine"],
+    ["TY10", "Thymalin 10mg", "", 80, 10],
+    ["GT600", "Glutathione 600mg", "", 50, 10],
+    ["GT1500", "Glutathione 1500mg", "", 80, 10, "GTT"],
+    ["GND2", "Gonadorelin 2mg", "", 40, 10],
+    ["GND5", "Gonadorelin 5mg", "", 60, 10],
+    ["MT10", "Melatonin 10mg", "", 60, 10],
+    ["5AM", "5-Amino-1MQ 5mg", "", 50, 10],
+    ["10AM", "5-Amino-1MQ 10mg", "", 80, 10],
+    ["50AM", "5-Amino-1MQ 50mg", "", 180, 10],
+    ["G75", "HMG 75IU", "", 70, 10],
+    ["NP810", "Snap-8 10mg", "", 55, 10],
+    ["RA10", "Ara-290 10mg", "", 60, 10],
+    ["CS10", "Cagrilintide 5mg + Semaglutide 5mg", "", 170, 10],
+    ["FM2", "MGF 2mg", "", 55, 10],
+    ["AE1", "ACE-031 1mg", "", 300, 10],
+    ["AR50", "AICAR 50mg", "", 70, 10],
+    ["XT100", "Botulinum toxin 100IU", "", 200, 1, "botox"],
+    ["ADM5", "Ad max 5mg", "", 90, 10, "adamax"],
+    ["ADM10", "Ad max 10mg", "", 120, 10, "adamax"],
+    ["FOX10", "FOXO4-DRI 10mg", "", 300, 10, "fox04"],
+    ["PIN5", "Pinealon 5mg", "", 50, 10],
+    ["PIN10", "Pinealon 10mg", "", 80, 10],
+    ["Bac3", "Bac water 3ml", "", 7, 10, "bacteriostatic"],
+    ["Bac10", "Bac water 10ml", "", 12, 10, "bacteriostatic"],
+    ["", "AA water 10ml", "Acetic acid solution 1%", 12, 10],
+    ["Lipo-C", "Lc120 10ml", "", 70, 10],
+    ["", "Lemon bottle 10ml", "", 80, 10],
+    ["", "B12 injection 10ml", "1mg/ml", 50, 10]
+  ];
+  var STAGES = [["draft", "Not placed yet"], ["placed", "Order placed"], ["looking", "Being looked at"],
+    ["payreq", "Payment requested"], ["paid", "Payment made"], ["ordered", "Ordered"],
+    ["making", "Being made"], ["sent", "Sent"], ["delivered", "Delivered"]];
+  var K = { order: "pprorder.order", saves: "pprorder.saves", cur: "pprorder.cur", rate: "pprorder.rate" };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function norm(s) { return String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9+]/g, ""); }
+  function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
+  function newId() { return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function r4(v) { return Math.round(v * 10000) / 10000; }
+  function clip(s, n) { return String(s == null ? "" : s).replace(/[<>"`]/g, "").replace(/\s+/g, " ").trim().slice(0, n); }
+
+  // One entry per product on the list. The price on the order is per vial, so the box price is split over its vials.
+  var P = LIST.map(function (r) {
+    return { k: r[0] || slug(r[1]), sku: r[0], name: r[1], note: r[2], kit: r[3], box: r[4], each: r[3] / r[4],
+      hay: norm([r[1], r[0], r[2], r[5] || ""].join(" ")) };
+  });
+  var PK = {}; P.forEach(function (p) { PK[p.k] = p; });
+
+  var D = null, CUR = "usd", RATE = RATE0, WA = null, SAVES = [], saveT = null, toastT = null, ASK = null, CMP = { a: "cur", b: "" };
+
+  /* ---------- what's kept on this device ---------- */
+  function read(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
+  function fresh() { return { items: [], shipUsd: 0, status: "draft", history: [] }; }
+  function hasStage(s) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === s) return true; return false; }
+  function cleanItem(it) {
+    if (!it || !it.name) return null;
+    var k = it.k && PK[it.k] ? String(it.k) : "";
+    return { id: String(it.id || newId()), k: k, sku: clip(it.sku, 20), name: clip(it.name, 80),
+      box: Math.max(1, Math.round(+it.box) || (k ? PK[k].box : 10)),
+      qty: Math.max(0, Math.round(+it.qty) || 0), price: Math.max(0, +it.price || 0) };
+  }
+  function cleanLine(l) {
+    var c = cleanItem(l); if (!c) return null;
+    return { k: c.k, sku: c.sku, name: c.name, box: c.box, qty: c.qty, price: c.price };
+  }
+  function cleanOrder(o) {
+    if (!o || typeof o !== "object") return fresh();
+    var items = []; (Array.isArray(o.items) ? o.items : []).forEach(function (it) { var c = cleanItem(it); if (c) items.push(c); });
+    return { items: items, shipUsd: Math.max(0, +o.shipUsd || 0), status: hasStage(o.status) ? o.status : "draft",
+      history: (Array.isArray(o.history) ? o.history : []).filter(function (h) { return h && hasStage(h.s) && h.t; })
+        .map(function (h) { return { s: h.s, t: String(h.t) }; }) };
+  }
+  function readSaves() {
+    var a = read(K.saves); if (!Array.isArray(a)) return [];
+    return a.filter(function (x) { return x && x.id && Array.isArray(x.lines); }).map(function (x) {
+      return { id: String(x.id), label: clip(x.label, 40) || "Saved order", at: String(x.at || ""), shipUsd: Math.max(0, +x.shipUsd || 0),
+        lines: x.lines.map(cleanLine).filter(Boolean) };
+    });
+  }
+  function readRate() { var v = 0; try { v = parseFloat(localStorage.getItem(K.rate)); } catch (e) {} return v >= 0.5 && v <= 5 ? v : RATE0; }
+  function writeSaves() { try { localStorage.setItem(K.saves, JSON.stringify(SAVES)); return true; } catch (e) { return false; } }
+  function saveNow() {
+    clearTimeout(saveT); saveT = null;
+    try { localStorage.setItem(K.order, JSON.stringify(D)); state("saved", "Saved"); return true; }
+    catch (e) { state("err", "Not saved, tap to retry"); return false; }
+  }
+  function afterEdit() { if (saveNow() && D.status !== "draft") setWa(WA === "placed" ? "placed" : "change"); }
+  function queueSave() { clearTimeout(saveT); saveT = setTimeout(afterEdit, 250); }
+  function flush() { if (saveT) afterEdit(); }
+
+  try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (e) {}
+  RATE = readRate(); D = cleanOrder(read(K.order)); SAVES = readSaves();
+
+  function rate() { return RATE; }
+  function show(usd) { return CUR === "aud" ? usd * rate() : usd; }
+  function toUsd(v) { return CUR === "aud" ? v / rate() : v; }
+  function money(v, cur) {
+    var n = (Math.round(v * 100) / 100).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return "$" + n + (cur ? " " + cur.toUpperCase() : "");
+  }
+  function num(s) { var v = parseFloat(String(s == null ? "" : s).replace(/[^0-9.]/g, "")); return isFinite(v) ? v : 0; }
+  function fix(v) { return (Math.round(show(v) * 100) / 100).toFixed(2); }
+  function toast(t) { var el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove("on"); }, 2200); }
+  function state(kind, text) { var el = $("state"); el.className = "state" + (kind ? " " + kind : ""); el.textContent = text || ""; }
+  function stageIx(s) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === s) return i; return 0; }
+  function fmtTime(t) {
+    var d = new Date(t); if (isNaN(d)) return "";
+    return d.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  }
+  function whenFor(s) { var t = ""; (D.history || []).forEach(function (h) { if (h.s === s) t = h.t; }); return t ? fmtTime(t) : ""; }
+  function vials(n) { return n + (n === 1 ? " vial" : " vials"); }
+
+  /* ---------- the order ---------- */
+  function sums() {
+    var sub = 0, v = 0, prods = 0;
+    D.items.forEach(function (it) { if (it.qty > 0) { sub += it.qty * it.price; v += it.qty; prods++; } });
+    return { sub: sub, ship: D.shipUsd, total: sub + D.shipUsd, vials: v, prods: prods };
+  }
+  function itemOf(el) { var row = el.closest(".item"); return row ? D.items[+row.dataset.i] || null : null; }
+  function onOrder(k) { for (var i = 0; i < D.items.length; i++) if (D.items[i].k === k) return i; return -1; }
+
+  function rowHtml(it, i) {
+    // The part number, so the supplier knows exactly which one. Something typed in shows as Added.
+    var pill = !it.k ? '<span class="pill add">Added</span>' : it.sku ? '<span class="pill">' + esc(it.sku) + '</span>' : '';
+    var step = it.box || 10;
+    return '<div class="item" data-i="' + i + '">' +
+      '<div class="head"><span class="nm">' + esc(it.name) + '</span><span class="hr">' + pill +
+        '<button type="button" class="x" data-act="remove" aria-label="Remove ' + esc(it.name) + '">&times;</button></span></div>' +
+      '<div class="ctrls">' +
+        '<label class="fld"><span class="cap">Qty</span><span class="step">' +
+          '<button type="button" data-act="minus" aria-label="' + step + ' fewer">&minus;</button>' +
+          '<input data-f="qty" inputmode="numeric" value="' + it.qty + '" aria-label="Quantity of ' + esc(it.name) + '">' +
+          '<button type="button" data-act="plus" aria-label="' + step + ' more">+</button></span></label>' +
+        '<label class="fld"><span class="cap">Price per vial</span><span class="money"><b>$</b>' +
+          '<input data-f="price" inputmode="decimal" value="' + (it.price > 0 ? fix(it.price) : "") + '" placeholder="Add" aria-label="Price per vial of ' + esc(it.name) + '"></span></label>' +
+        '<span class="line" data-line>' + money(show(it.qty * it.price)) + '</span>' +
+      '</div></div>';
+  }
+  function statusCard() {
+    var ix = stageIx(D.status), when = whenFor(D.status), bars = "";
+    for (var i = 1; i < STAGES.length; i++) bars += '<span class="' + (i <= ix ? "on" : "") + '"></span>';
+    var acts = D.status === "draft"
+      ? '<button class="cta mint" id="place" type="button">Place order</button>'
+      : '<div class="stat-acts"><button class="tint" id="chg" type="button">Update status</button>' +
+        (D.status === "delivered" ? '<button class="tint" id="neworder" type="button">Start a new order</button>' : '') + '</div>';
+    return '<div class="stat"><div class="stat-lbl">Order status</div><div class="stat-now">' + esc(STAGES[ix][1]) + '</div>' +
+      (when ? '<div class="stat-when">' + esc(when) + '</div>' : '') +
+      '<div class="prog" aria-hidden="true">' + bars + '</div>' + acts + '</div>';
+  }
+  function render() {
+    var list = D.items.map(rowHtml).join("");
+    if (!list) list = '<div class="empty">Nothing on the order yet. Add an item from the price list.</div>';
+    $("body").innerHTML = statusCard() + '<div id="waBox">' + waCard() + '</div>' +
+      '<div class="seg" role="group" aria-label="Currency">' +
+        '<button type="button" data-cur="usd" class="' + (CUR === "usd" ? "on" : "") + '">USD</button>' +
+        '<button type="button" data-cur="aud" class="' + (CUR === "aud" ? "on" : "") + '">AUD</button></div>' +
+      '<p class="rate">1 USD is <button type="button" class="rate-b" id="rateBtn" aria-label="Change the exchange rate, now ' + rate().toFixed(2) + '">' + rate().toFixed(2) + '</button> AUD</p>' +
+      '<div class="group">' + list +
+        '<button type="button" class="addrow" id="addBtn">+ Add item</button>' +
+        '<div class="ship"><div><span class="nm">Shipping</span><small>For the whole order</small></div>' +
+          '<span class="money"><b>$</b><input data-f="ship" inputmode="decimal" value="' + fix(D.shipUsd) + '" aria-label="Shipping"></span></div>' +
+      '</div>' +
+      '<div class="total" aria-live="polite"><div class="lbl">Total</div><div class="big" id="tBig"></div><div class="alt" id="tAlt"></div>' +
+        '<div class="rows"><div class="row"><span>Products</span><span id="tSub"></span></div>' +
+        '<div class="row"><span>Shipping</span><span id="tShip"></span></div>' +
+        '<div class="row"><span id="tCount"></span><span></span></div></div></div>' +
+      '<div class="acts3"><button class="tint" id="saveFor" type="button">Save for later</button>' +
+        '<button class="tint" id="savedBtn" type="button">Saved</button><button class="tint" id="cmpBtn" type="button">Compare</button></div>' +
+      '<button class="cta" id="copy" type="button">Copy order</button>' +
+      '<button class="ghost" id="reset" type="button">Clear order</button>';
+    totals();
+  }
+  function totals() {
+    var t = sums(), other = CUR === "aud" ? "usd" : "aud";
+    $("tBig").textContent = money(show(t.total), CUR);
+    $("tAlt").textContent = "About " + money(other === "aud" ? t.total * rate() : t.total, other);
+    $("tSub").textContent = money(show(t.sub));
+    $("tShip").textContent = money(show(t.ship));
+    $("tCount").textContent = t.prods + (t.prods === 1 ? " product, " : " products, ") + t.vials + " vials";
+    Array.prototype.forEach.call(document.querySelectorAll(".item"), function (row) {
+      var it = itemOf(row), el = row.querySelector("[data-line]");
+      if (it && el) el.textContent = money(show(it.qty * it.price));
+    });
+  }
+
+  /* ---------- WhatsApp: a button with the message ready, the person picks who and sends it ---------- */
+  function orderLines() {
+    var out = [];
+    D.items.forEach(function (it) {
+      if (!(it.qty > 0)) return;
+      var nm = (it.sku ? it.sku + " " : "") + it.name + " x " + vials(it.qty);
+      out.push(it.price > 0 ? nm + " at " + money(show(it.price)) + " = " + money(show(it.qty * it.price)) : nm + ", price to confirm");
+    });
+    return out;
+  }
+  function waMsg(kind) {
+    var lines = ["PPR Logistics", kind === "placed" ? "An order has been placed." :
+      kind === "status" ? "Order update: " + STAGES[stageIx(D.status)][1] + "." : "The order was changed."];
+    if (kind !== "status") {
+      lines.push("");
+      orderLines().forEach(function (l) { lines.push(l); });
+      lines.push("Shipping " + money(show(D.shipUsd)));
+      lines.push("Total " + money(show(sums().total), CUR));
+    }
+    return lines.join("\n");
+  }
+  function waCard() {
+    if (!WA || !D) return "";
+    var href = "https://wa.me/?text=" + encodeURIComponent(waMsg(WA));
+    var title = WA === "placed" ? "Order placed. Send the WhatsApp so PPR knows." :
+      WA === "status" ? "Status changed. Send the WhatsApp so PPR knows." : "Order changed. Send the WhatsApp so PPR knows.";
+    return '<div class="wa" role="status"><p>' + esc(title) + '</p><div class="wa-row">' +
+      '<a class="wa-btn" id="waGo" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Send on WhatsApp</a>' +
+      '<button type="button" class="wa-x" id="waX">Not now</button></div></div>';
+  }
+  function setWa(kind) { WA = kind; var box = $("waBox"); if (box) box.innerHTML = waCard(); }
+
+  /* ---------- status, clearing and new orders ---------- */
+  function setStatus(st) {
+    if (!D || st === D.status) { closeSheet(); return; }
+    if (st !== "draft" && !sums().prods) { closeSheet(); return toast("Add something to the order first"); }
+    var ix = stageIx(st), label = STAGES[ix][1], placing = st === "placed" && D.status === "draft";
+    ask(placing ? "Place this order?" : "Change the status to " + label + "?", placing ? "Place order" : "Change status").then(function (yes) {
+      if (!yes) return;
+      // Going back a step takes the later steps off the history.
+      D.history = D.history.filter(function (h) { return stageIx(h.s) < ix; });
+      if (ix > 0) D.history.push({ s: st, t: new Date().toISOString() });
+      D.status = st; render(); saveNow();
+      setWa(st === "placed" ? "placed" : "status");
+    });
+  }
+  function startOver(msg, yes, done) {
+    ask(msg, yes).then(function (ok) {
+      if (!ok) return;
+      D = fresh(); WA = null; saveNow(); render(); toast(done);
+    });
+  }
+
+  /* ---------- sheets ---------- */
+  function openSheet(html, cls) {
+    var s = $("sheet"); s.className = "sheet" + (cls ? " " + cls : "");
+    s.innerHTML = '<button type="button" class="sheet-x" id="sheetX" aria-label="Close">&times;</button>' + html;
+    $("mask").classList.add("on");
+  }
+  function closeSheet() {
+    var m = $("mask"); if (m) m.classList.remove("on"); var s = $("sheet"); if (s) { s.innerHTML = ""; s.className = "sheet"; }
+    if (ASK) { var r = ASK; ASK = null; r(false); }
+  }
+  // Asks inside the page instead of a browser pop up, which browsers let people block.
+  function ask(msg, yes) {
+    return new Promise(function (res) {
+      if (ASK) { var old = ASK; ASK = null; old(false); }
+      openSheet('<h2 class="ask">' + esc(msg) + '</h2><button class="cta" id="askYes" type="button">' + esc(yes) + '</button>' +
+        '<button class="ghost" id="askNo" type="button">Cancel</button>');
+      ASK = res;
+    });
+  }
+  function answer(v) { var r = ASK; ASK = null; closeSheet(); if (r) r(v); }
+  function openStatus() {
+    var ix = stageIx(D.status);
+    openSheet('<h2>Update status</h2><p class="sh-sub">Tap where the order is up to.</p><div class="opts">' +
+      STAGES.map(function (st, i) {
+        return '<button type="button" class="opt' + (i === ix ? " cur" : "") + '" data-st="' + st[0] + '">' +
+          '<span class="ck">' + (i <= ix ? "&#10003;" : "") + '</span><span class="ot">' + esc(st[1]) + '</span><span class="om">' + esc(whenFor(st[0])) + '</span></button>';
+      }).join("") + '</div>');
+  }
+
+  /* ---------- adding from the price list ----------
+     Tap to put something on the order, tap again to take it off. The sheet stays open so a whole
+     order can be picked in one go. */
+  function openAdd() {
+    openSheet('<h2>Add items</h2><div class="srch stick"><input id="addQ" type="text" placeholder="Search, or type a new item" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" aria-label="Search or type a new item"></div>' +
+      '<div class="opts" id="addList"></div><div class="donebar"><button class="cta" type="button" data-x="1">Done</button></div>', "picker");
+    addSearch();
+    // On a phone the keyboard would cover the list, so only jump into the search on a computer.
+    var touch = window.matchMedia && (window.matchMedia("(pointer:coarse)").matches || window.matchMedia("(hover:none)").matches);
+    if (!touch) setTimeout(function () { var q = $("addQ"); if (q) q.focus(); }, 60);
+  }
+  function addMatches(q) {
+    var words = String(q).split(/\s+/).map(norm).filter(Boolean);
+    return P.filter(function (p) { return words.every(function (w) { return p.hay.indexOf(w) >= 0; }); });
+  }
+  function subOf(p) { return [p.sku, p.note, vials(p.box)].filter(Boolean).join(", "); }
+  function optHtml(p) {
+    var on = onOrder(p.k) >= 0;
+    return '<button type="button" class="opt pl' + (on ? " on" : "") + '" data-pk="' + esc(p.k) + '" aria-pressed="' + on + '">' +
+      '<span class="ck">' + (on ? "&#10003;" : "") + '</span>' +
+      '<span class="ot"><span>' + esc(p.name) + '</span><span class="om">' + esc(subOf(p)) + '</span></span>' +
+      '<span class="pr">' + money(show(p.kit)) + '</span></button>';
+  }
+  function addSearch() {
+    var box = $("addList"); if (!box) return;
+    var q = $("addQ").value.trim(), ql = q.toLowerCase(), list = addMatches(q);
+    var html = list.map(optHtml).join("");
+    if (q && !P.some(function (p) { return p.name.toLowerCase() === ql; }))
+      html += '<button type="button" class="opt new" data-new="1"><span class="ck"></span><span class="ot">Add ' + esc(q) + ' as a new item</span></button>';
+    box.innerHTML = html || '<p class="empty">Nothing on the list matches.</p>';
+  }
+  function togglePk(k, btn) {
+    var p = PK[k]; if (!p) return;
+    var i = onOrder(k), on;
+    if (i >= 0) { D.items.splice(i, 1); on = false; toast(p.name + " removed"); }
+    else { D.items.push({ id: newId(), k: p.k, sku: p.sku, name: p.name, box: p.box, qty: p.box, price: p.each }); on = true; toast(p.name + " added"); }
+    if (btn) {
+      btn.classList.toggle("on", on); btn.setAttribute("aria-pressed", on);
+      btn.querySelector(".ck").innerHTML = on ? "&#10003;" : "";
+    }
+    render(); queueSave();
+  }
+  function addNew(name) {
+    name = clip(name, 60);
+    if (!name) return;
+    D.items.push({ id: newId(), k: "", sku: "", name: name, box: 10, qty: 10, price: 0 });
+    closeSheet(); render(); queueSave(); toast(name + " added");
+  }
+  function removeRow(btn) {
+    var row = btn.closest(".item"), gone = D.items.splice(+row.dataset.i, 1)[0];
+    render(); queueSave(); if (gone) toast(gone.name + " removed");
+  }
+
+  /* ---------- exchange rate ---------- */
+  function openRate() {
+    openSheet('<h2>Exchange rate</h2><p class="sh-sub">The price list is in USD. Set what 1 USD is in AUD.</p>' +
+      '<div class="group"><label class="si-row"><span class="cap">1 USD in AUD</span><input id="rateIn" inputmode="decimal" autocomplete="off" value="' + rate().toFixed(2) + '"></label></div>' +
+      '<button class="cta" id="rateGo" type="button">Save</button><button class="ghost" data-x="1" type="button">Cancel</button>');
+    setTimeout(function () { var i = $("rateIn"); if (i) { i.focus(); i.select(); } }, 60);
+  }
+  function saveRate() {
+    var v = num($("rateIn").value);
+    if (!(v >= 0.5 && v <= 5)) return toast("Type a rate like 1.43");
+    RATE = r4(v); try { localStorage.setItem(K.rate, String(RATE)); } catch (e) {}
+    closeSheet(); render(); toast("1 USD is now " + RATE.toFixed(2) + " AUD");
+  }
+
+  /* ---------- saved orders and compare ----------
+     A saved order is a copy of the order as it was, kept on this device. Compare puts any two side
+     by side: this order as it is now, or any saved one. Money is USD underneath and shown in
+     whichever currency is picked. */
+  function curLines() {
+    return D.items.filter(function (it) { return it.qty > 0; }).map(function (it) { return { k: it.k, sku: it.sku, name: it.name, box: it.box, qty: it.qty, price: it.price }; });
+  }
+  function srcOf(key) {
+    if (key === "cur") return D ? { label: "This order", lines: curLines(), ship: D.shipUsd } : null;
+    var r = null; SAVES.forEach(function (x) { if (x.id === key) r = x; });
+    return r ? { label: r.label, lines: r.lines || [], ship: +r.shipUsd || 0, at: r.at } : null;
+  }
+  function sumOf(src) {
+    var sub = 0, v = 0; src.lines.forEach(function (l) { sub += l.qty * l.price; v += l.qty; });
+    return { sub: sub, vials: v, total: sub + src.ship, prods: src.lines.length };
+  }
+  function countText(t) { return t.prods + (t.prods === 1 ? " product, " : " products, ") + t.vials + " vials"; }
+  function fmtDay(t) { var d = new Date(t); return isNaN(d) ? "" : d.toLocaleString([], { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); }
+  function openSaveFor() {
+    if (!D || !sums().prods) return toast("Add something to the order first");
+    var d = new Date(), def = "Order " + d.getDate() + " " + d.toLocaleString("en-AU", { month: "short" });
+    openSheet('<h2>Save for later</h2><p class="sh-sub">Keeps a copy of this order as it is now, with its items, prices and shipping. ' +
+      'It stays on this device.</p>' +
+      '<div class="group"><label class="si-row"><span class="cap">Name</span><input id="svName" maxlength="40" autocomplete="off" value="' + esc(def) + '"></label></div>' +
+      '<button class="cta" id="svGo" type="button">Save</button><button class="ghost" data-x="1" type="button">Cancel</button>');
+    setTimeout(function () { var i = $("svName"); if (i) { i.focus(); i.select(); } }, 60);
+  }
+  function doSaveFor() {
+    var btn = $("svGo"); if (!btn || btn.disabled) return;
+    var d = new Date(), label = clip($("svName").value, 40) || ("Order " + d.getDate() + " " + d.toLocaleString("en-AU", { month: "short" }));
+    SAVES.unshift({ id: newId(), label: label, at: d.toISOString(), lines: curLines(), shipUsd: r4(D.shipUsd) });
+    if (!writeSaves()) { SAVES.shift(); return toast("Couldn't save it on this device"); }
+    closeSheet(); toast("Saved as " + label);
+  }
+  function drawSaved() {
+    var list = SAVES.map(function (x) {
+      var t = sumOf(srcOf(x.id));
+      return '<button type="button" class="opt sv" data-sv="' + esc(x.id) + '"><span class="ot"><b>' + esc(x.label) + '</b>' +
+        '<span class="om">' + esc(fmtDay(x.at)) + ', ' + countText(t) + '</span></span><span class="sv-t">' + money(show(t.total)) + '</span></button>';
+    }).join("");
+    openSheet('<h2>Saved orders</h2><p class="sh-sub">' + (list ? "Tap one to see it, compare it or use it." : "") + '</p>' +
+      (list ? '<div class="opts">' + list + '</div>' : '<p class="empty">Nothing saved yet. Tap Save for later under the total to keep a copy of this order.</p>'));
+  }
+  function openSavedOne(id) {
+    var s = srcOf(id); if (!s) return drawSaved();
+    var t = sumOf(s);
+    openSheet('<h2>' + esc(s.label) + '</h2><p class="sh-sub">Saved ' + esc(fmtDay(s.at)) + '</p>' +
+      '<div class="group">' + s.lines.map(function (l) {
+        return '<div class="sv-line"><span class="nm">' + esc(l.name) + '</span><span class="sv-q">' + l.qty + ' x ' + money(show(l.price)) + '</span>' +
+          '<span class="sv-v">' + money(show(l.qty * l.price)) + '</span></div>';
+      }).join("") + '<div class="sv-line"><span class="nm">Shipping</span><span class="sv-v">' + money(show(s.ship)) + '</span></div></div>' +
+      '<div class="total"><div class="lbl">Total</div><div class="big">' + money(show(t.total), CUR) + '</div><div class="alt">' + countText(t) + '</div></div>' +
+      '<button class="cta" type="button" data-cmpwith="' + esc(id) + '">Compare with this order</button>' +
+      '<button class="tint wide" type="button" data-use="' + esc(id) + '">Make this the current order</button>' +
+      '<button class="ghost danger" type="button" data-del="' + esc(id) + '">Delete</button>');
+  }
+  function useSave(id) {
+    var s = srcOf(id); if (!s) return;
+    ask("Make " + s.label + " the current order? What's on the order now is replaced, and the status goes back to Not placed yet.", "Make it current").then(function (yes) {
+      if (!yes) return;
+      D = { items: s.lines.map(cleanItem).filter(Boolean), shipUsd: s.ship, status: "draft", history: [] };
+      WA = null; saveNow(); render(); toast(s.label + " is now the current order");
+    });
+  }
+  function delSave(id) {
+    var s = srcOf(id); if (!s) return;
+    ask("Delete " + s.label + "? This can't be undone.", "Delete").then(function (yes) {
+      if (!yes) return;
+      var keep = SAVES;
+      SAVES = SAVES.filter(function (x) { return x.id !== id; });
+      if (!writeSaves()) { SAVES = keep; return toast("Couldn't delete it, try again"); }
+      if (CMP.b === id) CMP.b = ""; if (CMP.a === id) CMP.a = "cur";
+      toast("Deleted"); drawSaved();
+    });
+  }
+  function openCompare(a, b) {
+    if (!SAVES.length) {
+      openSheet('<h2>Compare</h2><p class="sh-sub">Save an order for later first. Then you can put it side by side with this one, or with another saved order.</p>' +
+        '<button class="cta" id="saveFor" type="button">Save this order for later</button>');
+      return;
+    }
+    CMP.a = a || CMP.a || "cur"; CMP.b = b || CMP.b || SAVES[0].id;
+    if (!srcOf(CMP.a)) CMP.a = "cur";
+    if (!srcOf(CMP.b)) CMP.b = SAVES[0].id;
+    drawCompare();
+  }
+  function optList(sel) {
+    return '<option value="cur"' + (sel === "cur" ? " selected" : "") + '>This order</option>' + SAVES.map(function (x) {
+      return '<option value="' + esc(x.id) + '"' + (sel === x.id ? " selected" : "") + '>' + esc(x.label) + '</option>';
+    }).join("");
+  }
+  // One row per product, matched by its code, or by name for anything typed in.
+  function keyOf(l) { return l.sku ? "s:" + String(l.sku).toLowerCase() : "n:" + String(l.name).toLowerCase().replace(/[^a-z0-9+]/g, ""); }
+  function merged(src) {
+    var m = {}, keys = [];
+    src.lines.forEach(function (l) { var k = keyOf(l); if (!m[k]) { m[k] = { name: l.name, qty: 0, val: 0 }; keys.push(k); } m[k].qty += l.qty; m[k].val += l.qty * l.price; });
+    return { m: m, keys: keys };
+  }
+  function cell(x, win) {
+    if (!x) return '<div class="cmp-c none"><span class="q">&nbsp;</span><span class="v">Not in it</span></div>';
+    var each = x.qty ? x.val / x.qty : 0;
+    return '<div class="cmp-c' + (win ? " win" : "") + '"><span class="q">' + x.qty + ' x ' + money(show(each)) + '</span><span class="v">' + money(show(x.val)) + '</span></div>';
+  }
+  function drawCompare() {
+    var A = srcOf(CMP.a), B = srcOf(CMP.b);
+    if (!A || !B) { closeSheet(); return; }
+    var ma = merged(A), mb = merged(B), keys = ma.keys.slice(), unlike = false;
+    mb.keys.forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
+    var rows = keys.map(function (k) {
+      var a = ma.m[k], b = mb.m[k], note = "", good = false, wa = false, wb = false;
+      if (a && b) {
+        var d = b.val - a.val;
+        if (Math.abs(d) < 0.005) note = "Same";
+        else { good = true; if (d < 0) { wb = true; note = "B is " + money(show(-d)) + " less"; } else { wa = true; note = "A is " + money(show(d)) + " less"; } }
+        if (a.qty !== b.qty) { note += ", different amounts"; unlike = true; }
+      } else { unlike = true; note = a ? "Only in A" : "Only in B"; }
+      return '<div class="cmp-row"><div class="cmp-nm">' + esc((a || b).name) + '</div><div class="cmp-cells">' + cell(a, wa) + cell(b, wb) + '</div>' +
+        '<div class="cmp-d' + (good ? " good" : "") + '">' + esc(note) + '</div></div>';
+    }).join("");
+    var ta = sumOf(A), tb = sumOf(B), diff = tb.total - ta.total;
+    if (Math.abs(A.ship - B.ship) >= 0.005 && !keys.length) unlike = true;
+    var verdict = Math.abs(diff) < 0.005 ? "Both come to the same" : (diff < 0 ? "B is " + money(show(-diff), CUR) + " cheaper" : "A is " + money(show(diff), CUR) + " cheaper");
+    var y = $("sheet").scrollTop;
+    openSheet('<h2>Compare</h2>' +
+      '<label class="pick"><span class="ab">A</span><select id="cmpA" aria-label="Order A">' + optList(CMP.a) + '</select></label>' +
+      '<label class="pick"><span class="ab">B</span><select id="cmpB" aria-label="Order B">' + optList(CMP.b) + '</select></label>' +
+      (CMP.a === CMP.b ? '<p class="sh-sub">Pick two different orders to compare.</p>' : '') +
+      '<div class="total cmp-tot"><div class="cmp-tr th"><span></span><span>A</span><span>B</span></div>' +
+        '<div class="cmp-tr"><span>Products</span><span>' + money(show(ta.sub)) + '</span><span>' + money(show(tb.sub)) + '</span></div>' +
+        '<div class="cmp-tr"><span>Shipping</span><span>' + money(show(A.ship)) + '</span><span>' + money(show(B.ship)) + '</span></div>' +
+        '<div class="cmp-tr tot"><span>Total</span><span>' + money(show(ta.total)) + '</span><span>' + money(show(tb.total)) + '</span></div>' +
+        '<div class="cmp-v">' + esc(verdict) + '</div>' +
+        (unlike ? '<p class="cmp-note">They don\'t have exactly the same items and amounts, so check the lines below.</p>' : '') + '</div>' +
+      '<div class="group cmp"><div class="cmp-cols"><span class="ab">A</span><span class="ab">B</span></div>' +
+        (rows || '<div class="empty">Neither order has anything on it.</div>') + '</div>');
+    $("sheet").scrollTop = y;
+  }
+
+  function copy() {
+    var t = ["PPR order"].concat(orderLines(), ["Shipping " + money(show(D.shipUsd)), "Total " + money(show(sums().total), CUR)]).join("\n");
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta); toast(ok ? "Order copied" : "Couldn't copy, select it instead");
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(function () { toast("Order copied"); }, fallback);
+    else fallback();
+  }
+
+  /* ---------- one set of listeners for the whole page ---------- */
+  document.addEventListener("click", function (e) {
+    if (e.target.id === "mask") return closeSheet();
+    var a = e.target.closest("a");
+    if (a && a.id === "waGo") { setTimeout(function () { setWa(null); }, 300); return; }
+    var b = e.target.closest("button"); if (!b) return;
+    var id = b.id;
+    if (id === "state") { if (b.classList.contains("err")) afterEdit(); return; }
+    if (id === "copy") return copy();
+    if (id === "reset") return startOver("Clear the order and start again? Everything on it comes off and the status goes back to Not placed yet.", "Clear order", "Order cleared");
+    if (id === "place") return setStatus("placed");
+    if (id === "chg") return openStatus();
+    if (id === "neworder") return startOver("Start a new order? The items and status on this one are cleared.", "Start new order", "New order started");
+    if (id === "waX") return setWa(null);
+    if (id === "addBtn") return openAdd();
+    if (id === "rateBtn") return openRate();
+    if (id === "rateGo") return saveRate();
+    if (id === "sheetX" || b.dataset.x) return closeSheet();
+    if (id === "saveFor") return openSaveFor();
+    if (id === "svGo") return doSaveFor();
+    if (id === "savedBtn") return drawSaved();
+    if (id === "cmpBtn") return openCompare();
+    if (b.dataset.sv) return openSavedOne(b.dataset.sv);
+    if (b.dataset.cmpwith) return openCompare("cur", b.dataset.cmpwith);
+    if (b.dataset.use) return useSave(b.dataset.use);
+    if (b.dataset.del) return delSave(b.dataset.del);
+    if (id === "askYes") return answer(true);
+    if (id === "askNo") return answer(false);
+    if (b.dataset.st) return setStatus(b.dataset.st);
+    if (b.dataset.pk) return togglePk(b.dataset.pk, b);
+    if (b.dataset["new"]) return addNew($("addQ").value);
+    if (b.dataset.cur) {
+      CUR = b.dataset.cur; try { localStorage.setItem(K.cur, CUR); } catch (err) {}
+      return render();
+    }
+    var act = b.dataset.act; if (!act || !D) return;
+    if (act === "remove") return removeRow(b);
+    var it = itemOf(b); if (!it) return;
+    var step = it.box || 10;
+    it.qty = act === "plus" ? it.qty + step : Math.max(0, it.qty - step);
+    b.closest(".item").querySelector('[data-f="qty"]').value = it.qty;
+    totals(); queueSave();
+  });
+  document.addEventListener("input", function (e) {
+    if (e.target.id === "addQ") return addSearch();
+    var f = e.target.dataset && e.target.dataset.f; if (!f || !D) return;
+    if (f === "ship") D.shipUsd = toUsd(num(e.target.value));
+    else {
+      var it = itemOf(e.target); if (!it) return;
+      if (f === "qty") it.qty = Math.round(num(e.target.value));
+      if (f === "price") it.price = toUsd(num(e.target.value));
+    }
+    totals(); queueSave();
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target.id === "cmpA" || e.target.id === "cmpB") { CMP[e.target.id === "cmpA" ? "a" : "b"] = e.target.value; return drawCompare(); }
+    var f = e.target.dataset && e.target.dataset.f; if (!f || !D) return;
+    if (f === "ship") { e.target.value = fix(D.shipUsd); return; }
+    var it = itemOf(e.target); if (!it) return;
+    e.target.value = f === "qty" ? it.qty : (it.price > 0 ? fix(it.price) : "");
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") return closeSheet();
+    if (e.key === "Enter" && e.target.id === "svName") { e.preventDefault(); return doSaveFor(); }
+    if (e.key === "Enter" && e.target.id === "rateIn") { e.preventDefault(); return saveRate(); }
+    if (e.key === "Enter" && e.target.id === "addQ") {
+      e.preventDefault();
+      var q = e.target.value.trim(), m = addMatches(q);
+      if (q && m.length === 1) {
+        if (onOrder(m[0].k) < 0) togglePk(m[0].k); else toast(m[0].name + " is already on the order");
+        e.target.value = ""; addSearch();
+      } else if (q && !m.length) addNew(q);
+      else e.target.blur();
+    }
+  });
+  // Save anything still waiting when the page is put away or closed.
+  document.addEventListener("visibilitychange", function () { if (document.hidden) flush(); });
+  window.addEventListener("pagehide", flush);
+  // Keep two open tabs of this page in step.
+  window.addEventListener("storage", function (e) {
+    if (e.key === K.saves) { SAVES = readSaves(); return; }
+    if (e.key !== K.order && e.key !== K.rate && e.key !== K.cur) return;
+    var ae = document.activeElement;
+    if (saveT || $("mask").classList.contains("on") || (ae && ae.tagName === "INPUT" && $("body").contains(ae))) return;
+    D = cleanOrder(read(K.order)); RATE = readRate();
+    try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (err) {}
+    render();
+  });
+  window.__log = { waMsg: function (k) { return waMsg(k); }, sums: function () { return sums(); }, saves: function () { return SAVES; },
+    order: function () { return D; }, list: function () { return P; } };
+  render();
+})();
+</script>
+</body>
+</html>
