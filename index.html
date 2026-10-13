@@ -210,10 +210,17 @@ body.out .page{min-height:100vh;min-height:100svh;display:flex;flex-direction:co
 .wa-row{display:flex;gap:10px;align-items:center}
 .wa-btn{flex:1;display:flex;align-items:center;justify-content:center;height:44px;border-radius:12px;background:#1f8a5f;color:#fff;font-weight:600;text-decoration:none}
 .wa-x{border:0;background:transparent;color:#1d5c3f;font-size:15px;cursor:pointer;padding:8px}
+.sheet .wa-sh{text-align:center;padding:6px 0 0}
+.wa-ic{width:64px;height:64px;border-radius:50%;background:var(--mint-tint);color:var(--mint);display:inline-flex;align-items:center;justify-content:center;margin:4px 0 12px}
+.wa-ic svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.sheet .wa-sh h2{font-size:24px;margin:0 0 6px}
+.sheet .wa-sh .sh-sub{margin:0 8px 18px}
+.cta.wa-cta{display:flex;align-items:center;justify-content:center;text-decoration:none;background:#1f8a5f}
 /* add and remove */
 .hr{display:flex;align-items:center;gap:8px;flex:none}
 .x{width:28px;height:28px;border-radius:50%;border:0;background:var(--field);color:var(--ink3);font-size:18px;line-height:1;cursor:pointer}
 .pill.add{background:var(--peri-tint);color:var(--peri)}
+.pill.mem{background:var(--mint-tint);color:var(--mint)}
 .addrow{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--peri);font-size:17px;font-weight:500;padding:14px 16px;cursor:pointer;position:relative}
 .addrow::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
 .empty{padding:16px;color:var(--ink2);font-size:15px}
@@ -317,9 +324,8 @@ body.out .page{min-height:100vh;min-height:100svh;display:flex;flex-direction:co
 if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ""; } }
 
 /* PPR Logistics order. People pick from the price list, set the amounts, add packaging and designs,
-   and see everything at your prices: cost plus your markup. The supplier prices aren't in this file;
-   they're on the Google script, and only come to a device after the code is typed in, behind three
-   taps on the title. Everything syncs, so every device sees the same order within about 10 seconds.
+   and see everything at PPR's prices. No supplier prices are in this file, and the script only ever
+   sends PPR's prices. Everything syncs, so every device sees the same order within about 10 seconds.
    It needs the password to open and signs itself out after 8 hours. Money is kept in USD and shown in
    USD or AUD; packaging is priced in AUD. */
 (function () {
@@ -465,7 +471,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   var STAGES = [["draft", "Not placed yet"], ["placed", "Order placed"], ["looking", "Being looked at"],
     ["payreq", "Payment requested"], ["paid", "Payment made"], ["ordered", "Ordered"],
     ["making", "Being made"], ["sent", "Sent"], ["delivered", "Delivered"]];
-  var K = { auth: "pprorder.auth", last: "pprorder.last", cur: "pprorder.cur", q: "pprorder.q" };
+  var K = { auth: "pprorder.auth", last: "pprorder.last", cur: "pprorder.cur", q: "pprorder.q", wa: "pprorder.wa" };
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -475,6 +481,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function r4(v) { return Math.round(v * 10000) / 10000; }
   function clip(s, n) { return String(s == null ? "" : s).replace(/[<>"`]/g, "").replace(/\s+/g, " ").trim().slice(0, n); }
 
+  function ownerOp(o) { return !!o && (o.t === "price" || o.t === "pprice" || o.t === "ship"); }
   var P = LIST.map(function (r) {
     return { k: r[0] || slug(r[1]), sku: r[0], name: r[1], note: r[2], box: r[3], hay: norm([r[1], r[0], r[2], r[4] || ""].join(" ")) };
   });
@@ -484,12 +491,13 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     SCAT = {}, PRS = { box: 0, label: 0, ship: 0 }, PRC = null, OTOK = null, PROFIT = null,
     FILES = null, FV = -1, UPS = [], VIEWURL = "", filesBusy = false,
     Q = [], INF = null, sendErr = false, NEEDR = false, busy = false,
-    NOTES = "", VIEW = "order", PQ = [], PINF = null, psendT = null, PBUSY = false, TAPS = [],
+    NOTES = "", WA_HIDE = false, VIEW = "order", LAST_ACT = Date.now(), IDLE_LOCK = 5 * 60000, PQ = [], PINF = null, psendT = null, PBUSY = false, TAPS = [],
     sendT = null, pollT = null, outT = null, toastT = null, rendT = null, ASK = null, CMP = { a: "cur", b: "" };
   try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (e) {}
   try { AUTH = JSON.parse(localStorage.getItem(K.auth) || "null"); } catch (e) { AUTH = null; }
+  WA = waStored();
   // Changes that hadn't reached the script yet when the page was last closed go up again.
-  try { Q = (JSON.parse(localStorage.getItem(K.q) || "[]") || []).filter(function (o) { return o && typeof o.t === "string"; }); } catch (e) { Q = []; }
+  try { Q = (JSON.parse(localStorage.getItem(K.q) || "[]") || []).filter(function (o) { return o && typeof o.t === "string" && !ownerOp(o); }); } catch (e) { Q = []; }
 
   function rate() { return RATE; }
   function show(usd) { return CUR === "aud" ? usd * rate() : usd; }
@@ -539,7 +547,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function signOut(manual) {
     if (manual && AUTH) post({ action: "bye", pass: AUTH.pass }).catch(function () {});
     // Signing out on purpose drops anything unsaved. Running out of time keeps it to send after the next sign in.
-    if (manual) { Q = []; INF = null; saveQ(); }
+    if (manual) { Q = []; INF = null; saveQ(); waStore(null); }
     AUTH = null; SRV = null; D = null; V = -1; WA = null; SAVES = null; NEEDR = false; FILES = null; FV = -1;
     OTOK = null; PROFIT = null; PRC = null; VIEW = "order"; PQ = []; PINF = null; clearTimeout(psendT);
     clearTimeout(sendT); clearTimeout(pollT); clearTimeout(outT); closeSheet();
@@ -566,7 +574,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     btn.disabled = true; btn.textContent = "Signing in"; err.textContent = "";
     post({ action: "login", pw: pw }).then(function (j) {
       if (j && j.ok && j.pass) {
-        AUTH = { pass: j.pass, exp: +j.exp };
+        AUTH = { pass: j.pass, exp: +j.exp }; WA = waStored(); WA_HIDE = false;
         try { localStorage.setItem(K.auth, JSON.stringify(AUTH)); } catch (e) {}
         document.body.classList.remove("out"); armExpiry(); load(false);
         if (Q.length) send();
@@ -597,7 +605,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   }
   function catCost(p) { return owner() && +PROFIT.cat[p.k] > 0 ? +PROFIT.cat[p.k] : 0; }
   function catSell(p) { if (!owner()) return +SCAT[p.k] || 0; return hasSell(p.k) ? PROFIT.sell[p.k] / rate() : catCost(p) * (1 + mk() / 100); }
-  function unit(it, kind) { return kind === "cost" ? (+it.price || 0) : sellOf(it); }
+  // The member list's price for how many of a product are on the order: 10 to 40, 50 to 90, 100 to 200, 300 plus.
+  function tierOf(m, q) { q = +q || 0; return q >= 300 ? m[5] : q >= 100 ? m[4] : q >= 50 ? m[3] : m[2]; }
+  function memberOf(it) { return owner() && !it.hand && it.k && PROFIT.member ? PROFIT.member[it.k] || null : null; }
+  // What it costs you at the amount on the order: the cheaper of the price list and the member list.
+  function costAt(it) { var c = +it.price || 0, m = memberOf(it); return m ? Math.min(c, tierOf(m, it.qty)) : c; }
+  // The code to order it with: the member list's code when that's where the cheaper price is.
+  function fromMember(it) { var m = memberOf(it); return !!m && tierOf(m, it.qty) < m[1]; }
+  function srcCode(it) { return fromMember(it) ? PROFIT.member[it.k][0] : it.sku; }
+  function unit(it, kind) { return kind === "cost" ? costAt(it) : sellOf(it); }
   function catUnit(p, kind) { return kind === "cost" ? catCost(p) : catSell(p); }
   // Packaging, in AUD: your cost, or what people pay with the packaging markup on top.
   function packPrices(kind) {
@@ -615,7 +631,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     var k = it.k && PK[it.k] ? String(it.k) : "";
     return { id: String(it.id || newId()), k: k, sku: clip(it.sku, 20), name: clip(it.name, 80),
       box: Math.max(1, Math.round(+it.box) || (k ? PK[k].box : 10)),
-      qty: Math.max(0, Math.round(+it.qty) || 0), sell: Math.max(0, +it.sell || 0), price: OTOK ? Math.max(0, +it.price || 0) : 0 };
+      qty: Math.max(0, Math.round(+it.qty) || 0), sell: Math.max(0, +it.sell || 0), price: OTOK ? Math.max(0, +it.price || 0) : 0,
+      hand: OTOK ? !!it.hand : false };
   }
   function cleanOrder(o) {
     if (!o || typeof o !== "object") return fresh();
@@ -630,7 +647,12 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function cleanMap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { if (+m[k] > 0) o[k] = +m[k]; }); return o; }
   function cleanOwn(o) {
     o = o || {};
-    return { markup: Math.max(0, +o.markup || 0), pmarkup: Math.max(0, +o.pmarkup || 0), sell: cleanMap(o.sell), cat: cleanMap(o.cat) };
+    var member = {};
+    Object.keys(o.member || {}).forEach(function (k) {
+      var m = o.member[k];
+      if (Array.isArray(m) && m.length === 6 && m.slice(1).every(function (v) { return +v > 0; })) member[k] = [String(m[0])].concat(m.slice(1).map(Number));
+    });
+    return { markup: Math.max(0, +o.markup || 0), pmarkup: Math.max(0, +o.pmarkup || 0), sell: cleanMap(o.sell), cat: cleanMap(o.cat), member: member };
   }
   function findIx(op) {
     for (var i = 0; i < D.items.length; i++) if (D.items[i].id === op.id) return i;
@@ -655,7 +677,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     var ix = findIx(op); if (ix < 0) return;
     if (op.t === "del") D.items.splice(ix, 1);
     else if (op.t === "qty") D.items[ix].qty = Math.max(0, Math.round(+op.v) || 0);
-    else if (op.t === "price" && owner()) D.items[ix].price = Math.max(0, +op.v || 0);
+    else if (op.t === "price" && owner()) { D.items[ix].price = Math.max(0, +op.v || 0); D.items[ix].hand = true; }
   }
   function typing() { var ae = document.activeElement; return !!(ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA") && $("body").contains(ae)); }
   // Take the script's copy of the order, then put back on top anything still on its way up.
@@ -675,6 +697,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     }
     D = cleanOrder(j.order);
     (INF || []).forEach(applyLocal); Q.forEach(applyLocal);
+    waCheck();
     if (!cached && !OTOK) remember();
     if (typing()) { NEEDR = true; totals(); } else render();
     if ($("addList")) addSearch();
@@ -687,7 +710,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function remembered() {
     try { var c = JSON.parse(localStorage.getItem(K.last) || "null"); return c && AUTH && c.exp === AUTH.exp ? c : null; } catch (e) { return null; }
   }
-  function saveQ() { try { localStorage.setItem(K.q, JSON.stringify((INF || []).concat(Q))); } catch (e) {} }
+  // Changes waiting to save are kept on the device in case the page closes. Price, shipping and packaging
+  // cost changes never are: they only count with the code, and the code never survives a reload anyway.
+  function saveQ() { try { localStorage.setItem(K.q, JSON.stringify((INF || []).concat(Q).filter(function (o) { return !ownerOp(o); }))); } catch (e) {} }
 
   /* ---------- keeping in step with the script ---------- */
   function load(manual) {
@@ -747,7 +772,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         adopt(j);
         if (Q.length) { state("saving", "Saving"); sendT = setTimeout(send, 300); }
         else state("saved", "Saved");
-        if (D && D.status !== "draft") setWa(WA === "placed" ? "placed" : "change");
+        if (D && D.status !== "draft" && batch.some(function (o) { return o.t !== "notes"; })) setWa(WA === "placed" ? "placed" : "change");
       } else if (j && j.error === "signed_out") { Q = batch.concat(Q); INF = null; saveQ(); signOut(); }
       else throw new Error("not saved");
     }).catch(function () {
@@ -810,7 +835,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
 
   function rowHtml(it, kind) {
     // The part number, so the supplier knows exactly which one. Something typed in shows as Added.
-    var pill = !it.k ? '<span class="pill add">Added</span>' : it.sku ? '<span class="pill">' + esc(it.sku) + '</span>' : '';
+    var code = kind === "cost" ? srcCode(it) : it.sku;
+    var pill = !it.k ? '<span class="pill add">Added</span>' : code ? '<span class="pill' + (kind === "cost" && fromMember(it) ? " mem" : "") + '" data-code="1">' + esc(code) + '</span>' : '';
     var step = it.box || 10, u = unit(it, kind);
     var price = kind === "cost"
       ? '<span class="money"><b>$</b><input data-f="price" inputmode="decimal" value="' + (u > 0 ? fix(u) : "") + '" placeholder="Add" aria-label="Cost per vial of ' + esc(it.name) + '"></span>'
@@ -947,17 +973,31 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     Array.prototype.forEach.call(document.querySelectorAll(".item[data-id]"), function (row) {
       var it = itemOf(row), el = row.querySelector("[data-line]");
       if (it && el) el.textContent = money(show(it.qty * unit(it, kind)));
+      if (it && kind === "cost") {
+        var pin = row.querySelector('[data-f="price"]'), pc = row.querySelector("[data-code]");
+        if (pin && pin !== document.activeElement) pin.value = costAt(it) > 0 ? fix(costAt(it)) : "";
+        if (pc && it.k) { pc.textContent = srcCode(it); pc.classList.toggle("mem", fromMember(it)); }
+      }
     });
   }
 
-  /* ---------- WhatsApp: a button with the message ready, the person picks who and sends it ---------- */
+  /* ---------- WhatsApp ----------
+     Placing an order opens a screen with one button that opens WhatsApp to PPR on 0494 599 813 with
+     the whole order typed out, so it just needs sending. Until it's sent, a green reminder stays on the
+     page, even after a reload. Changes to a placed order prompt the same way. With the code open,
+     updates you send go to whoever you pick, since you'd be telling the person who ordered. */
+  var PPR_WA = "61494599813";
+  function orderLine(it, kind) {
+    var u = unit(it, kind), code = kind === "cost" ? srcCode(it) : it.sku, nm = (code ? code + " " : "") + it.name + " x " + vials(it.qty);
+    return u > 0 ? nm + " at " + money(show(u)) + " = " + money(show(it.qty * u)) : nm + ", price to confirm";
+  }
   function orderLines(kind) {
-    var out = [];
-    D.items.forEach(function (it) {
-      if (!(it.qty > 0)) return;
-      var u = unit(it, kind), nm = (it.sku ? it.sku + " " : "") + it.name + " x " + vials(it.qty);
-      out.push(u > 0 ? nm + " at " + money(show(u)) + " = " + money(show(it.qty * u)) : nm + ", price to confirm");
-    });
+    var on = D.items.filter(function (it) { return it.qty > 0; });
+    if (kind !== "cost" || !on.some(fromMember)) return on.map(function (it) { return orderLine(it, kind); });
+    // Your supplier order, split by which list each one is cheaper from.
+    var list = on.filter(function (it) { return !fromMember(it); }), mem = on.filter(fromMember), out = [];
+    if (list.length) out = out.concat(["", "12 May price list"], list.map(function (it) { return orderLine(it, kind); }));
+    out = out.concat(["", "Member discount list"], mem.map(function (it) { return orderLine(it, kind); }), [""]);
     return out;
   }
   function packLines(kind) {
@@ -969,28 +1009,55 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     return out;
   }
   function waMsg(kind) {
-    var lines = ["PPR Logistics", kind === "placed" ? "An order has been placed." :
+    var lines = ["PPR Logistics", kind === "placed" ? "New order placed." :
       kind === "status" ? "Order update: " + STAGES[stageIx(D.status)][1] + "." : "The order was changed."];
     if (kind !== "status") {
+      var t = sums("sell").total, other = CUR === "aud" ? "usd" : "aud";
       lines.push("");
       orderLines("sell").forEach(function (l) { lines.push(l); });
       lines.push("Shipping " + money(show(D.shipUsd)));
       packLines("sell").forEach(function (l) { lines.push(l); });
-      lines.push("Total " + money(show(sums("sell").total), CUR));
+      lines.push("Total " + money(show(t), CUR) + ", about " + money(other === "aud" ? t * rate() : t, other));
     }
-    lines.push("", location.href.split("#")[0]);
+    lines.push("", "Order: " + location.href.split("#")[0]);
     return lines.join("\n");
   }
-  function waCard() {
-    if (!WA || !D) return "";
-    var href = "https://wa.me/?text=" + encodeURIComponent(waMsg(WA));
-    var title = WA === "placed" ? "Order placed. Send the WhatsApp so PPR knows." :
-      WA === "status" ? "Status changed. Send the WhatsApp so PPR knows." : "Order changed. Send the WhatsApp so PPR knows.";
-    return '<div class="wa" role="status"><p>' + esc(title) + '</p><div class="wa-row">' +
-      '<a class="wa-btn" id="waGo" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Send on WhatsApp</a>' +
-      '<button type="button" class="wa-x" id="waX">Not now</button></div></div>';
+  function waNumber(kind) { return kind !== "placed" && owner() ? "" : PPR_WA; }
+  function waHref(kind) { return "https://wa.me/" + waNumber(kind) + "?text=" + encodeURIComponent(waMsg(kind)); }
+  function waStored() { try { var k = localStorage.getItem(K.wa); return /^(placed|change|status)$/.test(k) ? k : null; } catch (e) { return null; } }
+  function waStore(kind) { try { if (kind) localStorage.setItem(K.wa, kind); else localStorage.removeItem(K.wa); } catch (e) {} }
+  // Only remind while it still fits: something on a placed order, and a placed reminder only until PPR moves it on.
+  function waCheck() {
+    if (!WA || !D) return;
+    var live = D.status !== "draft" && D.items.some(function (it) { return it.qty > 0; });
+    if (!live || (WA === "placed" && D.status !== "placed")) { WA = null; waStore(null); }
   }
-  function setWa(kind) { WA = kind; var box = $("waBox"); if (box) box.innerHTML = waCard(); }
+  function waTitle(kind) {
+    if (kind === "placed") return "Order placed. Last step: send it to PPR on WhatsApp so they get it.";
+    if (!waNumber(kind)) return kind === "status" ? "Status changed. Send the update on WhatsApp." : "Order changed. Send the update on WhatsApp.";
+    return kind === "status" ? "Status changed. Send it to PPR on WhatsApp so they know." : "Order changed. Send it to PPR on WhatsApp so they know.";
+  }
+  function waLink(kind, cls) {
+    return '<a class="' + cls + '" data-wa="1" href="' + esc(waHref(kind)) + '" target="_blank" rel="noopener noreferrer">' +
+      (waNumber(kind) ? "Send to PPR on WhatsApp" : "Send on WhatsApp") + '</a>';
+  }
+  function waCard() {
+    if (!WA || WA_HIDE || !D) return "";
+    return '<div class="wa" role="status"><p>' + esc(waTitle(WA)) + '</p><div class="wa-row">' + waLink(WA, "wa-btn") +
+      '<button type="button" class="wa-x" id="waX">Later</button></div></div>';
+  }
+  function setWa(kind) { WA = kind; WA_HIDE = false; waStore(kind); waCheck(); var box = $("waBox"); if (box) box.innerHTML = waCard(); }
+  // Later hides the reminder until the page is next opened. Tapping send clears it for good.
+  function waLater() { WA_HIDE = true; var box = $("waBox"); if (box) box.innerHTML = waCard(); }
+  function waSent() { WA = null; WA_HIDE = false; waStore(null); var box = $("waBox"); if (box) box.innerHTML = ""; if ($("waSheet")) closeSheet(); }
+  // Straight after placing: one big button to send it to PPR.
+  function waSheet() {
+    if (!WA || !D) return;
+    $("toast").classList.remove("on");
+    openSheet('<div class="wa-sh" id="waSheet"><div class="wa-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>' +
+      '<h2>Order placed</h2><p class="sh-sub">Last step: send it to PPR on WhatsApp. The message is typed out ready, just tap send.</p>' +
+      waLink("placed", "cta wa-cta") + '<button class="ghost" type="button" data-x="1">Later</button></div>');
+  }
 
   /* ---------- status, clearing and new orders ---------- */
   function setStatus(st) {
@@ -1003,7 +1070,11 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       synced(function () {
         post({ action: "status", status: st, pass: AUTH.pass }).then(function (j) {
           if (j && j.error === "empty") { state("", ""); return toast("Add something to the order first"); }
-          if (j && j.ok) { if (!AUTH) return; adopt(j); state("saved", "Saved"); setWa(st === "placed" ? "placed" : "status"); }
+          if (j && j.ok) {
+            if (!AUTH) return;
+            adopt(j); state("saved", "Saved"); setWa(placing ? "placed" : "status");
+            if (placing) waSheet();
+          }
           else if (j && j.error === "signed_out") signOut();
           else throw new Error("no");
         }).catch(function () { state("err", "Not saved, tap to retry"); toast("Couldn't change the status, try again"); });
@@ -1018,7 +1089,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       state("saving", "Saving");
       post(body).then(function (j) {
         if (failed(j, "Couldn't " + what + ", try again")) { state("", ""); return; }
-        WA = null; adopt(j); state("saved", "Saved"); toast(done);
+        WA = null; waStore(null); adopt(j); state("saved", "Saved"); toast(done);
       }).catch(function () { state("", ""); toast("Couldn't " + what + ", try again"); });
     })();
   }
@@ -1326,7 +1397,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       '<div class="head"><span class="nm">' + esc(it.name) + '</span><span class="hr" data-stag="' + esc(k) + '">' + sellTag(k) + '</span></div>' +
       '<div class="ctrls">' +
         '<label class="fld"><span class="cap">Cost per vial</span><span class="money"><b>$</b>' +
-          '<input data-pcost="' + esc(it.id) + '" inputmode="decimal" value="' + (it.price > 0 ? fix(it.price) : "") + '" placeholder="Add" aria-label="Cost per vial of ' + esc(it.name) + '"></span></label>' +
+          '<input data-pcost="' + esc(it.id) + '" inputmode="decimal" value="' + (costAt(it) > 0 ? fix(costAt(it)) : "") + '" placeholder="Add" aria-label="Cost per vial of ' + esc(it.name) + '"></span></label>' +
         '<label class="fld"><span class="cap">Your price per vial</span><span class="money"><b>$</b>' +
           '<input data-sell="' + esc(k) + '" inputmode="decimal" value="' + fix(sellOf(it)) + '" aria-label="Your price per vial of ' + esc(it.name) + '"></span></label>' +
         '<span class="line pl"><small data-pcap2="1">' + vials(it.qty) + ' profit</small><span data-pline2="1"></span></span>' +
@@ -1370,8 +1441,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     Array.prototype.forEach.call(document.querySelectorAll("[data-pid]"), function (row) {
       var it = byId(row.dataset.pid); if (!it) return;
       var sl = row.querySelector("[data-sell]"), ln = row.querySelector("[data-pline2]"), tg = row.querySelector("[data-stag]"), cp = row.querySelector("[data-pcap2]");
-      var lp = it.qty * (sellOf(it) - it.price), lose = lp < -0.005;
+      var lp = it.qty * (sellOf(it) - costAt(it)), lose = lp < -0.005, pc = row.querySelector("[data-pcost]");
       if (sl && sl !== ae) sl.value = fix(sellOf(it));
+      if (pc && pc !== ae) pc.value = costAt(it) > 0 ? fix(costAt(it)) : "";
       if (ln) { ln.textContent = money(show(Math.abs(lp))); ln.className = lose ? "neg" : ""; }
       if (cp) cp.textContent = vials(it.qty) + (lose ? " loss" : " profit");
       if (tg) tg.innerHTML = sellTag(skey(it));
@@ -1381,7 +1453,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     packTotals("cost");
   }
   function openCode() {
-    openSheet('<div class="si pc"><div class="si-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/></svg></div><h2>Your prices</h2>' +
+    openSheet('<div class="si pc"><div class="si-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/></svg></div>' +
       '<input class="si-pw code-in" id="pcode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Code" aria-label="Code">' +
       '<p class="si-err" id="pcErr" role="alert"></p><button class="cta" id="pcGo" type="button">Open</button></div>');
     setTimeout(function () { var i = $("pcode"); if (i) i.focus(); }, 60);
@@ -1398,7 +1470,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
           closeSheet(); adopt(j); window.scrollTo(0, 0); return;
         }
         if (j && j.error === "signed_out") return signOut();
-        if ($("pcErr")) $("pcErr").textContent = j && j.error === "locked" ? "Too many tries. Wait 10 minutes, then try again." :
+        if ($("pcErr")) $("pcErr").textContent = j && j.error === "locked" ? "Too many tries. Try again in " + Math.max(1, +j.mins || 10) + (+j.mins === 1 ? " minute." : " minutes.") :
           j && j.error === "bad_action" ? "The Google script needs updating first." : "That code isn't right.";
         if ($("pcode")) $("pcode").value = "";
       }).catch(function () { if ($("pcErr")) $("pcErr").textContent = "No connection. Check it and try again."; })
@@ -1408,9 +1480,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   // Locking drops your costs from this device and fetches the order again at your prices only.
   function lockProfit() {
     if (PQ.length && !PINF) sendP();
+    if (Q.length && !INF && OTOK) send();
     OTOK = null; PROFIT = null; PRC = null; PQ = []; VIEW = "order"; clearTimeout(psendT);
     if (D) D.items.forEach(function (it) { it.sell = it.sell || 0; it.price = 0; });
+    SAVES = null; CMP = { a: "cur", b: "" };
     closeSheet(); SRV = null; render(); load(false);
+  }
+  // Your prices lock themselves after 5 minutes without a tap, or 5 minutes away from the page.
+  function idleCheck() {
+    if (OTOK && Date.now() - LAST_ACT > IDLE_LOCK) { lockProfit(); toast("Your prices locked"); }
   }
   function applyP(op) {
     if (!PROFIT || !op) return;
@@ -1536,10 +1614,19 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         .then(function () { var at = UPS.indexOf(f.name); if (at >= 0) UPS.splice(at, 1); drawFiles(); next(i + 1); });
     })(0);
   }
+  // Only plain pictures and PDFs are shown on the page. Anything else, including SVG and web pages, is
+  // only ever downloaded, so a file someone uploads can't run anything here.
+  function cleanMime(m) { return String(m || "").toLowerCase().split(";")[0].trim(); }
+  function viewKind(m) {
+    m = cleanMime(m);
+    if (/^image\/(png|jpeg|gif|webp|avif|bmp)$/.test(m)) return "pic";
+    if (m === "application/pdf") return "pdf";
+    return "";
+  }
   function fileMeta(id) { var r = null; (FILES || []).forEach(function (f) { if (f.id === id) r = f; }); return r; }
   function openFile(id) {
     var f = fileMeta(id); if (!f) return;
-    var pic = /^image\//.test(f.mime || "");
+    var pic = viewKind(f.mime) === "pic";
     openSheet('<h2 class="ask">' + esc(f.name) + '</h2><p class="sh-sub">' + esc(sizeText(+f.size || 0) + ", " + fmtDay(f.at)) + '</p>' +
       '<div class="pv" id="pv"><span class="pv-wait">Loading</span></div>' +
       '<a class="cta lnk off" id="fOpen" target="_blank" rel="noopener">Open</a>' +
@@ -1550,10 +1637,11 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       var bin = atob(j.data || ""), bytes = new Uint8Array(bin.length);
       for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       if (VIEWURL) { try { URL.revokeObjectURL(VIEWURL); } catch (e) {} }
-      VIEWURL = URL.createObjectURL(new Blob([bytes], { type: j.mime || "application/octet-stream" }));
-      $("pv").innerHTML = pic ? '<img src="' + VIEWURL + '" alt="' + esc(f.name) + '">' : '<span class="fth ext big">' + esc(extOf(f.name)) + '</span>';
+      var kind = viewKind(j.mime);
+      VIEWURL = URL.createObjectURL(new Blob([bytes], { type: kind ? cleanMime(j.mime) : "application/octet-stream" }));
+      $("pv").innerHTML = kind === "pic" ? '<img src="' + VIEWURL + '" alt="' + esc(f.name) + '">' : '<span class="fth ext big">' + esc(extOf(f.name)) + '</span>';
       var a = $("fOpen"); a.href = VIEWURL; a.classList.remove("off");
-      if (!pic && !/pdf/.test(j.mime || "")) { a.setAttribute("download", f.name); a.textContent = "Download"; }
+      if (!kind) { a.setAttribute("download", f.name); a.removeAttribute("target"); a.textContent = "Download"; }
     }).catch(function () { toast("Couldn't open it, try again"); });
   }
   function delFile(id) {
@@ -1588,8 +1676,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   document.addEventListener("click", function (e) {
     if (e.target.id === "mask") return closeSheet();
     var a = e.target.closest("a");
-    if (a && a.id === "waGo") { setTimeout(function () { setWa(null); }, 300); return; }
-    // Three quick taps on the title opens your prices, or asks for the code.
+    if (a && a.getAttribute("data-wa")) { setTimeout(waSent, 300); return; }
+    // Three quick taps on the title.
     if (e.target.closest("h1") && D && signedIn()) {
       var tnow = Date.now(); TAPS = TAPS.filter(function (t) { return tnow - t < 900; }); TAPS.push(tnow);
       if (TAPS.length >= 3) { TAPS = []; if (owner()) { VIEW = "profit"; render(); window.scrollTo(0, 0); } else openCode(); }
@@ -1607,7 +1695,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (id === "place") return setStatus("placed");
     if (id === "chg") return openStatus();
     if (id === "neworder") return startOver("Start a new order? The items and status on this one are cleared.", "Start new order", "New order started");
-    if (id === "waX") return setWa(null);
+    if (id === "waX") return waLater();
     if (id === "addBtn") return openAdd();
     if (id === "rateBtn") return openRate();
     if (id === "rateGo") return saveRate();
@@ -1695,10 +1783,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       e.target.value = fix(cit ? sellOf(cit) : cp ? catSell(cp) : 0);
       return;
     }
-    if (ds.pcost) { var cpi = byId(ds.pcost); if (cpi) e.target.value = cpi.price > 0 ? fix(cpi.price) : ""; return; }
+    if (ds.pcost) { var cpi = byId(ds.pcost); if (cpi) e.target.value = costAt(cpi) > 0 ? fix(costAt(cpi)) : ""; return; }
     if (ds.pf) { e.target.value = ds.pf === "ship" ? fixAud(PRC.ship) : unitNum(showAud(PRC[ds.pf])); return; }
     if (ds.f === "ship") { e.target.value = fix(D.shipUsd); return; }
-    if (ds.f === "price") { var it = itemOf(e.target); if (it) e.target.value = it.price > 0 ? fix(it.price) : ""; }
+    if (ds.f === "price") { var it = itemOf(e.target); if (it) e.target.value = costAt(it) > 0 ? fix(costAt(it)) : ""; }
   });
   // Something changed on another device while a box here was being typed in, so redraw once typing stops.
   document.addEventListener("focusout", function () {
@@ -1720,15 +1808,21 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       else e.target.blur();
     }
   });
+  ["pointerdown", "keydown", "input", "wheel", "touchmove"].forEach(function (ev) {
+    document.addEventListener(ev, function () { idleCheck(); LAST_ACT = Date.now(); }, { capture: true, passive: true });
+  });
+  setInterval(idleCheck, 5000);
+  window.addEventListener("pageshow", idleCheck);
   // Phones pause timers in the background, so check the 8 hours and catch up whenever the page comes back.
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) { clearTimeout(pollT); if (Q.length && !INF) send(true); return; }
+    idleCheck();
     if (AUTH && !signedIn()) return signOut();
     if (signedIn()) { if (Q.length && !INF) send(); load(false); }
   });
   window.addEventListener("pagehide", function () { if (Q.length && !INF && signedIn()) send(true); });
   window.addEventListener("online", function () { if (signedIn()) { if (Q.length && !INF) send(); load(false); } });
-  window.__log = { waMsg: function (k) { return waMsg(k); }, sums: function (k) { return sums(k); }, saves: function () { return SAVES; },
+  window.__log = { waMsg: function (k) { return waMsg(k); }, waHref: function (k) { return waHref(k); }, sums: function (k) { return sums(k); }, saves: function () { return SAVES; },
     order: function () { return D; }, v: function () { return V; }, pending: function () { return Q.length + (INF ? INF.length : 0) + PQ.length + (PINF ? PINF.length : 0); },
     profit: function () { return owner() ? profitSums() : null; }, unlocked: function () { return owner(); } };
 
