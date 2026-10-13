@@ -23,7 +23,7 @@
 html,body{margin:0;background:var(--canvas);color:var(--ink);
   font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
   -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
-button,input{font:inherit;color:inherit}
+button,input,textarea{font:inherit;color:inherit}
 .page{max-width:600px;margin:0 auto;
   padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
 
@@ -136,6 +136,13 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 .total.pf .mini button.on{color:var(--ink)}
 .rate.under{margin:-8px 4px 16px}
 
+/* design notes */
+.nt-l{font-size:13px;color:var(--ink3);margin:16px 16px 6px}
+.group.nt textarea{display:block;width:100%;min-height:110px;border:0;background:transparent;padding:12px 16px;font-size:17px;line-height:1.35;resize:vertical;color:var(--ink)}
+.group.nt textarea::placeholder{color:var(--ink3)}
+.group.nt textarea:focus{outline:none}
+.group.nt:focus-within{box-shadow:0 0 0 2px var(--peri)}
+
 /* the hidden profit view */
 h1{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .seg.tabs{margin:0 0 14px}
@@ -150,7 +157,8 @@ h1{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-t
 .line.pl .neg{color:var(--blush)}
 .opt.ap{cursor:default}
 .opt.ap .ot{display:flex;flex-direction:column;gap:2px;min-width:0}
-.money input[data-markup]{width:58px;text-align:right}
+.money input[data-markup],.money input[data-pmarkup]{width:58px;text-align:right}
+.pk-head.mk + .pk-head.mk::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
 .opt.ap .money{flex:none}
 .opt.ap .money input{width:70px}
 .si.pc{margin:6px auto 4px}
@@ -469,7 +477,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   var AUTH = null, SRV = null, D = null, V = -1, CUR = "usd", RATE = RATE0, WA = null, SAVES = null,
     PR = { box: PACK0.box, label: PACK0.label, ship: PACK0.ship }, FILES = null, FV = -1, UPS = [], VIEWURL = "", filesBusy = false,
     Q = [], INF = null, sendErr = false, NEEDR = false, busy = false,
-    PCODE = null, PROFIT = null, PV = -1, VIEW = "order", PQ = [], PINF = null, psendT = null, PBUSY = false, TAPS = [],
+    NOTES = "", PCODE = null, PROFIT = null, PV = -1, VIEW = "order", PQ = [], PINF = null, psendT = null, PBUSY = false, TAPS = [],
     sendT = null, pollT = null, outT = null, toastT = null, rendT = null, ASK = null, CMP = { a: "cur", b: "" };
   try { CUR = localStorage.getItem(K.cur) === "aud" ? "aud" : "usd"; } catch (e) {}
   try { AUTH = JSON.parse(localStorage.getItem(K.auth) || "null"); } catch (e) { AUTH = null; }
@@ -590,6 +598,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   // The same steps the script takes, done here straight away so the page never waits.
   function applyLocal(op) {
     if (!D || !op) return;
+    if (op.t === "notes") { NOTES = String(op.v == null ? "" : op.v); return; }
     if (op.t === "ship") { D.shipUsd = Math.max(0, +op.v || 0); return; }
     if (op.t === "pon") { D.pack.on = !!op.v; return; }
     if (op.t === "pqty") { if (op.f === "boxes" || op.f === "labels") D.pack[op.f] = cnt(op.v); return; }
@@ -604,11 +613,12 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     else if (op.t === "qty") D.items[ix].qty = Math.max(0, Math.round(+op.v) || 0);
     else if (op.t === "price") D.items[ix].price = Math.max(0, +op.v || 0);
   }
-  function typing() { var ae = document.activeElement; return !!(ae && ae.tagName === "INPUT" && $("body").contains(ae)); }
+  function typing() { var ae = document.activeElement; return !!(ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA") && $("body").contains(ae)); }
   // Take the script's copy of the order, then put back on top anything still on its way up.
   function adopt(j, cached) {
     if (!cached && SRV && +j.v < SRV.v) return false;
-    SRV = { v: +j.v || 0, order: j.order, rate: j.rate, pack: j.pack };
+    SRV = { v: +j.v || 0, order: j.order, rate: j.rate, pack: j.pack, notes: j.notes };
+    NOTES = typeof j.notes === "string" ? j.notes : "";
     V = SRV.v; RATE = +j.rate >= 0.5 && +j.rate <= 5 ? +j.rate : RATE0;
     var pk = j.pack || {};
     PR = { box: pk.box >= 0 ? +pk.box : PACK0.box, label: pk.label >= 0 ? +pk.label : PACK0.label, ship: pk.ship >= 0 ? +pk.ship : PACK0.ship };
@@ -621,7 +631,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (!cached && PCODE && j.pv != null && +j.pv !== PV) { PV = +j.pv; loadProfit(); }
     return true;
   }
-  function remember() { if (!SRV || !AUTH) return; try { localStorage.setItem(K.last, JSON.stringify({ exp: AUTH.exp, v: SRV.v, order: SRV.order, rate: SRV.rate, pack: SRV.pack })); } catch (e) {} }
+  function remember() { if (!SRV || !AUTH) return; try { localStorage.setItem(K.last, JSON.stringify({ exp: AUTH.exp, v: SRV.v, order: SRV.order, rate: SRV.rate, pack: SRV.pack, notes: SRV.notes })); } catch (e) {} }
   function remembered() {
     try { var c = JSON.parse(localStorage.getItem(K.last) || "null"); return c && AUTH && c.exp === AUTH.exp ? c : null; } catch (e) { return null; }
   }
@@ -665,7 +675,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function queue(op) {
     applyLocal(op);
     // Only the latest qty, price, shipping or packaging setting needs to go up.
-    if (/^(qty|price|ship|pon|pqty|pprice)$/.test(op.t))
+    if (/^(qty|price|ship|pon|pqty|pprice|notes)$/.test(op.t))
       Q = Q.filter(function (x) { return !(x.t === op.t && x.id === op.id && x.f === op.f); });
     Q.push(op); saveQ();
     state("saving", "Saving");
@@ -789,7 +799,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         '<button class="tint" id="savedBtn" type="button">Saved</button><button class="tint" id="cmpBtn" type="button">Compare</button></div>' +
       '<button class="cta" id="copy" type="button">Copy order</button>' +
       '<button class="ghost" id="reset" type="button">Clear order</button>' +
-      '<div id="dzBox">' + filesHtml() + '</div>';
+      '<div id="dzBox">' + filesHtml() + '</div>' +
+      '<p class="nt-l">Design notes, everyone sees these</p>' +
+      '<div class="group nt"><textarea id="notes" rows="4" maxlength="5000" placeholder="Sizes, colours, wording, what to change, anything for the printer" aria-label="Design notes">' + esc(NOTES) + '</textarea></div>';
     totals();
   }
   function packTotals() {
@@ -1208,6 +1220,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
      the sales less everything the order costs: products, shipping and packaging if it's on. */
   function numTxt(v) { return String(Math.round(v * 100) / 100); }
   function mk() { return PROFIT && +PROFIT.markup >= 0 ? +PROFIT.markup : 100; }
+  function pmk() { return PROFIT && +PROFIT.pmarkup >= 0 ? +PROFIT.pmarkup : 0; }
   function skey(it) { return it.k || "n:" + norm(it.name); }
   function hasSell(k) { return !!(PROFIT && PROFIT.sell && +PROFIT.sell[k] > 0); }
   function sellUsd(it) { var k = skey(it); return hasSell(k) ? PROFIT.sell[k] / rate() : it.price * (1 + mk() / 100); }
@@ -1215,13 +1228,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function cleanProfit(p) {
     p = p || {}; var sell = {};
     Object.keys(p.sell || {}).forEach(function (k) { if (+p.sell[k] > 0) sell[k] = +p.sell[k]; });
-    return { markup: +p.markup >= 0 ? +p.markup : 100, sell: sell };
+    return { markup: +p.markup >= 0 ? +p.markup : 100, pmarkup: +p.pmarkup >= 0 ? +p.pmarkup : 0, sell: sell };
   }
+  // What you charge for packaging is its cost with the packaging markup on top.
   function profitSums() {
     var s = sums(), sales = 0;
     D.items.forEach(function (it) { if (it.qty > 0) sales += it.qty * sellUsd(it); });
-    var profit = sales - s.total;
-    return { sales: sales, cost: s.sub, ship: s.ship, pack: s.pack, packOn: s.packOn, profit: profit, margin: sales > 0 ? profit / sales : 0, vials: s.vials };
+    var packSell = s.packOn ? s.pack * (1 + pmk() / 100) : 0, income = sales + packSell, profit = income - s.total;
+    return { sales: sales, packSell: packSell, income: income, cost: s.sub, ship: s.ship, pack: s.pack, packOn: s.packOn,
+      profit: profit, margin: income > 0 ? profit / income : 0, vials: s.vials };
   }
   function tabsHtml() {
     if (!PCODE) return "";
@@ -1248,12 +1263,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (!PROFIT) return '<div class="skel"></div><div class="skel"></div>';
     var rows = D.items.filter(function (it) { return it.qty > 0; }).map(prowHtml).join("");
     return '<div class="total pf" id="pCard" aria-live="polite"><div class="tot-h"><div class="lbl" id="pLbl">Profit</div>' + miniCur() + '</div><div class="big" id="pBig"></div><div class="alt" id="pAlt"></div>' +
-        '<div class="rows"><div class="row"><span>Sales</span><span id="pSales"></span></div>' +
+        '<div class="rows"><div class="row"><span>Product sales</span><span id="pSales"></span></div>' +
+        '<div class="row" id="pPackSellRow"><span>Packaging charged</span><span id="pPackSell"></span></div>' +
         '<div class="row"><span>Products cost</span><span id="pCost"></span></div>' +
         '<div class="row"><span>Shipping</span><span id="pShip"></span></div>' +
-        '<div class="row" id="pPackRow"><span>Packaging</span><span id="pPack"></span></div></div></div>' + rateHtml("under") +
-      '<div class="group"><div class="pk-head"><div><span class="nm">Markup</span><small>Added to the cost of every product</small></div>' +
-        '<span class="money"><input data-markup="1" inputmode="decimal" value="' + numTxt(mk()) + '" aria-label="Markup percent"><b class="suf">%</b></span></div></div>' +
+        '<div class="row" id="pPackRow"><span>Packaging cost</span><span id="pPack"></span></div></div></div>' + rateHtml("under") +
+      '<div class="group"><div class="pk-head mk"><div><span class="nm">Markup</span><small>Added to the cost of every product</small></div>' +
+        '<span class="money"><input data-markup="1" inputmode="decimal" value="' + numTxt(mk()) + '" aria-label="Markup percent"><b class="suf">%</b></span></div>' +
+        '<div class="pk-head mk"><div><span class="nm">Packaging markup</span><small>Added to boxes, labels and packaging shipping</small></div>' +
+        '<span class="money"><input data-pmarkup="1" inputmode="decimal" value="' + numTxt(pmk()) + '" aria-label="Packaging markup percent"><b class="suf">%</b></span></div></div>' +
       '<div class="group pk">' + (rows || '<div class="empty">Add something to the order to see the profit.</div>') +
         '<div class="ship"><div><span class="nm">Shipping</span><small>For the whole order</small></div>' +
           '<span class="money"><b>$</b><input data-f="ship" inputmode="decimal" value="' + fix(D.shipUsd) + '" aria-label="Shipping"></span></div></div>' +
@@ -1269,13 +1287,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("pLbl").textContent = loss ? "Loss" : "Profit";
     $("pBig").textContent = money(show(Math.abs(t.profit)), CUR);
     $("pCard").classList.toggle("neg", loss);
-    $("pAlt").textContent = !(t.sales > 0) ? "Nothing on the order yet" :
+    $("pAlt").textContent = !(t.income > 0) ? "Nothing on the order yet" :
       (loss ? "Losing " + Math.round(-t.margin * 100) + "%" : "Margin " + Math.round(t.margin * 100) + "%") + ", selling all " + vials(t.vials);
     $("pSales").textContent = money(show(t.sales));
     $("pCost").textContent = money(show(t.cost));
     $("pShip").textContent = money(show(t.ship));
     $("pPackRow").style.display = t.packOn ? "" : "none";
     $("pPack").textContent = money(show(t.pack));
+    $("pPackSellRow").style.display = t.packOn ? "" : "none";
+    $("pPackSell").textContent = money(show(t.packSell));
     Array.prototype.forEach.call(document.querySelectorAll("[data-pid]"), function (row) {
       var it = byId(row.dataset.pid); if (!it) return;
       var sl = row.querySelector("[data-sell]"), ln = row.querySelector("[data-pline2]"), tg = row.querySelector("[data-stag]"), cp = row.querySelector("[data-pcap2]");
@@ -1286,6 +1306,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       if (tg) tg.innerHTML = sellTag(skey(it));
     });
     var mi = document.querySelector("[data-markup]"); if (mi && mi !== ae) mi.value = numTxt(mk());
+    var pmi = document.querySelector("[data-pmarkup]"); if (pmi && pmi !== ae) pmi.value = numTxt(pmk());
     packTotals();
   }
   function openCode() {
@@ -1328,6 +1349,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function applyP(op) {
     if (!PROFIT || !op) return;
     if (op.t === "markup") PROFIT.markup = Math.max(0, +op.v || 0);
+    else if (op.t === "pmarkup") PROFIT.pmarkup = Math.max(0, +op.v || 0);
     else if (op.t === "sell" && op.k) { if (op.v == null || !(+op.v > 0)) delete PROFIT.sell[op.k]; else PROFIT.sell[op.k] = +op.v; }
   }
   function queueP(op) {
@@ -1566,9 +1588,11 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   document.addEventListener("input", function (e) {
     if (e.target.id === "addQ") return addSearch();
     if (e.target.id === "apQ") return apSearch();
+    if (e.target.id === "notes" && D) { queue({ t: "notes", v: e.target.value.slice(0, 5000) }); return; }
     if (e.target.id === "pcode") { if (e.target.value.replace(/\D/g, "").length === 4) tryCode(); return; }
     var ds = e.target.dataset || {};
     if (D && PROFIT && ds.markup) { queueP({ t: "markup", v: Math.max(0, num(e.target.value)) }); return profitTotals(); }
+    if (D && PROFIT && ds.pmarkup) { queueP({ t: "pmarkup", v: Math.max(0, num(e.target.value)) }); return profitTotals(); }
     if (D && PROFIT && ds.sell) {
       var raw = e.target.value.trim();
       queueP({ t: "sell", k: ds.sell, v: raw === "" ? null : r4(toAud(num(raw))) });
@@ -1593,6 +1617,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (e.target.id === "upIn") { upload(e.target.files); e.target.value = ""; return; }
     var ds = e.target.dataset || {};
     if (D && PROFIT && ds.markup) { e.target.value = numTxt(mk()); return; }
+    if (D && PROFIT && ds.pmarkup) { e.target.value = numTxt(pmk()); return; }
     if (D && PROFIT && ds.sell) {
       var cit = null; D.items.forEach(function (x) { if (skey(x) === ds.sell) cit = x; });
       var cp = PK[ds.sell];
